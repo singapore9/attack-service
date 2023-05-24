@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "attack-service"
+version = "0.1.0"
+description = "Service for scanning linked VMs for weak items"
+authors = ["Andrei <sharik.and@gmail.com>"]
+readme = "README.md"
+packages = [{include = "attack_service"}]
+
+[tool.poetry.dependencies]
+python = "^3.11.2"
+fastapi = "^0.95.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
