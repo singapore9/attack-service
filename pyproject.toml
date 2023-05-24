@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Service for scanning linked VMs for weak items"
 authors = ["Andrei <sharik.and@gmail.com>"]
 readme = "README.md"
-packages = [{include = "attack_service"}]
+packages = []
 
 [tool.poetry.dependencies]
 python = "^3.11.2"
