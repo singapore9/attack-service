@@ -11,3 +11,5 @@ RUN poetry config virtualenvs.in-project true
 RUN poetry install
 
 COPY . .
+
+EXPOSE 8000
