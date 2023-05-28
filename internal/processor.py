@@ -3,6 +3,19 @@ from collections import defaultdict
 from .extractor import get_cloud_environment
 
 
+async def get_affected_vm_ids_by_tag(
+    vm_ids_by_tag: dict[str, list[str]],
+    dest_tags_by_source_tag: dict[str, set[str]],
+    tag: str,
+) -> list[str]:
+    total_affected_vm_ids_by_tag = []
+    affected_dest_tags = dest_tags_by_source_tag.get(tag, set())
+    for affected_tag in affected_dest_tags:
+        affected_vm_ids = vm_ids_by_tag.get(affected_tag, [])
+        total_affected_vm_ids_by_tag.extend(affected_vm_ids)
+    return total_affected_vm_ids_by_tag
+
+
 async def get_affected_vm_id_list(vm_id: str) -> list[str]:
     cloud_environment = await get_cloud_environment()
     vm_ids_by_tag = defaultdict(list)
@@ -21,9 +34,10 @@ async def get_affected_vm_id_list(vm_id: str) -> list[str]:
     total_affected_vm_ids = set()
 
     for tag in can_use_tags:
-        affected_dest_tags = dest_tags_by_source_tag.get(tag, set())
-        for affected_tag in affected_dest_tags:
-            affected_vm_ids = vm_ids_by_tag.get(affected_tag, [])
-            total_affected_vm_ids.update(affected_vm_ids)
+        total_affected_vm_ids.update(
+            await get_affected_vm_ids_by_tag(
+                vm_ids_by_tag, dest_tags_by_source_tag, tag
+            )
+        )
 
     return list(total_affected_vm_ids)
