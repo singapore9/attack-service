@@ -1,4 +1,6 @@
+from asyncio import gather
 from collections import defaultdict
+from itertools import chain
 
 from .extractor import get_cloud_environment
 
@@ -31,13 +33,13 @@ async def get_affected_vm_id_list(vm_id: str) -> list[str]:
     for fw_rule in cloud_environment.rules:
         dest_tags_by_source_tag[fw_rule.source_tag].add(fw_rule.dest_tag)
 
-    total_affected_vm_ids = set()
+    gather_results = await gather(
+        *[
+            get_affected_vm_ids_by_tag(vm_ids_by_tag, dest_tags_by_source_tag, tag)
+            for tag in can_use_tags
+        ]
+    )
 
-    for tag in can_use_tags:
-        total_affected_vm_ids.update(
-            await get_affected_vm_ids_by_tag(
-                vm_ids_by_tag, dest_tags_by_source_tag, tag
-            )
-        )
+    total_affected_vm_ids = set(chain.from_iterable(gather_results))
 
     return list(total_affected_vm_ids)
