@@ -5,6 +5,8 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from routers.api import router as router_api
+
 load_dotenv()
 
 origins = []
@@ -18,6 +20,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.include_router(router_api, prefix="/api", tags=["api"])
 
 
 class StatusModel(BaseModel):
