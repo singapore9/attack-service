@@ -6,6 +6,18 @@ class StrictBaseModel(BaseModel):
         extra = Extra.forbid
         allow_population_by_field_name = True
 
+    def to_db(self):
+        data = self.dict()
+        data["_id"] = data["id"]
+        del data["id"]
+        return data
+
+    @classmethod
+    def parse_obj_from_db(cls, data: dict):
+        data["id"] = data["_id"]
+        del data["_id"]
+        return cls.parse_obj(data)
+
 
 class VMInfo(StrictBaseModel):
     id: str = Field(alias="vm_id")
