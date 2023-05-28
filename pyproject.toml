@@ -11,6 +11,7 @@ python = "^3.11.2"
 fastapi =  {extras = ["all"], version = "^0.95.2"}
 python-dotenv = "^1.0.0"
 requests = "^2.31.0"
+motor = "^3.1.2"
 
 
 [tool.poetry.group.dev.dependencies]

@@ -7,9 +7,11 @@ COPY pyproject.toml project/
 COPY poetry.lock project/
 WORKDIR ./project
 
+EXPOSE 8000
+
 RUN poetry config virtualenvs.in-project true
 RUN poetry install
 
 COPY . .
 
-EXPOSE 8000
+CMD make uvicorn
