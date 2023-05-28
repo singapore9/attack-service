@@ -42,4 +42,7 @@ async def get_affected_vm_id_list(vm_id: str) -> list[str]:
 
     total_affected_vm_ids = set(chain.from_iterable(gather_results))
 
+    if vm_id in total_affected_vm_ids:
+        total_affected_vm_ids.remove(vm_id)
+
     return list(total_affected_vm_ids)
