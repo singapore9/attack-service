@@ -4,8 +4,7 @@ from .models import CloudEnvironment, FirewallRule, VMInfo
 from .processor import get_affected_vm_id_list
 
 
-class AttachTestCase(IsolatedAsyncioTestCase):
-    @skip(reason="Processor hasn't have correct logic yet")
+class ProcessorTestCase(IsolatedAsyncioTestCase):
     async def test_processor_positive(self):
         with mock.patch(
             "internal.processor.get_cloud_environment"
