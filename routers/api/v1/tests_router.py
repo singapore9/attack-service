@@ -7,7 +7,7 @@ from requests import codes
 from main import app
 
 
-class AttachTestCase(IsolatedAsyncioTestCase):
+class AttackTestCase(IsolatedAsyncioTestCase):
     async def test_attack_positive(self):
         client = TestClient(app)
 
