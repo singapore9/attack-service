@@ -98,6 +98,58 @@ class ExtractorTestCase(IsolatedAsyncioTestCase):
     @mock.patch(
         "builtins.open",
         new=mock.mock_open(
+            read_data="""{
+    "vms": [],
+    "fw_rules": [
+        {
+        "fw_id": "id1",
+        "source_tag": "ssh",
+        "dest_tag": "dev"
+    },
+    {
+        "fw_id": "id1",
+        "source_tag": "ssh",
+        "dest_tag": "dev"
+    }
+    ]
+}"""
+        ),
+        create=True,
+    )
+    async def test_extractor_with_vm_ids_duplication(self):
+        with self.assertRaises(ValidationError, msg="VM IDs should be unique"):
+            await get_cloud_environment()
+
+    @mock.patch(
+        "builtins.open",
+        new=mock.mock_open(
+            read_data="""{
+    "vms": [
+        {
+            "vm_id": "vm1",
+            "name": "n1",
+            "tags": []
+        },
+        {
+            "vm_id": "vm1",
+            "name": "n1_1",
+            "tags": []
+        }
+    ],
+    "fw_rules": []
+}"""
+        ),
+        create=True,
+    )
+    async def test_extractor_with_fw_rule_ids_duplication(self):
+        with self.assertRaises(
+            ValidationError, msg="Firewall Rule IDs should be unique"
+        ):
+            await get_cloud_environment()
+
+    @mock.patch(
+        "builtins.open",
+        new=mock.mock_open(
             read_data="""
     "fw_rules": []
 }"""
