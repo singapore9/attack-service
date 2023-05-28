@@ -1,5 +1,6 @@
 from unittest import IsolatedAsyncioTestCase, mock
 
+from parameterized import parameterized
 from pydantic import ValidationError
 
 from .extractor import get_cloud_environment
@@ -58,104 +59,83 @@ class ExtractorTestCase(IsolatedAsyncioTestCase):
             "Valid JSON with valid models",
         )
 
-    @mock.patch(
-        "builtins.open",
-        new=mock.mock_open(
-            read_data="""{
-    "additional_field": [],
-    "vms": [],
-    "fw_rules": []
-}"""
-        ),
-        create=True,
+    @parameterized.expand(
+        (
+            (
+                "Valid JSON with incorrect schema",
+                """
+                    {
+                        "additional_field": [],
+                        "vms": [],
+                        "fw_rules": []
+                    }""",
+            ),
+            (
+                "Valid JSON with incorrect schema for inner models",
+                """
+                    {
+                        "vms": [{
+                                "vm_id": "id1",
+                                "name": "n1",
+                                "tags": [
+                                ],
+                                "problemfield": []
+                            }],
+                        "fw_rules": []
+                    }""",
+            ),
+            (
+                "VM IDs should be unique",
+                """
+                    {
+                        "vms": [],
+                        "fw_rules": [
+                            {
+                            "fw_id": "id1",
+                            "source_tag": "ssh",
+                            "dest_tag": "dev"
+                        },
+                        {
+                            "fw_id": "id1",
+                            "source_tag": "ssh",
+                            "dest_tag": "dev"
+                        }
+                        ]
+                    }""",
+            ),
+            (
+                "Firewall Rule IDs should be unique",
+                """
+                    {
+                        "vms": [
+                            {
+                                "vm_id": "vm1",
+                                "name": "n1",
+                                "tags": []
+                            },
+                            {
+                                "vm_id": "vm1",
+                                "name": "n1_1",
+                                "tags": []
+                            }
+                        ],
+                        "fw_rules": []
+                    }""",
+            ),
+            (
+                "Invalid JSON",
+                """
+                    {{
+                        "fw_rules": []
+                    }""",
+            ),
+        )
     )
-    async def test_extractor_with_extra_fields(self):
-        with self.assertRaises(ValidationError, msg="Valid JSON with incorrect schema"):
-            await get_cloud_environment()
-
-    @mock.patch(
-        "builtins.open",
-        new=mock.mock_open(
-            read_data="""{
-    "vms": [{
-            "vm_id": "id1",
-            "name": "n1",
-            "tags": [
-            ],
-            "problemfield": []
-        }],
-    "fw_rules": []
-}"""
-        ),
-        create=True,
-    )
-    async def test_extractor_with_extra_inner_fields(self):
-        with self.assertRaises(
-            ValidationError, msg="Valid JSON with incorrect schema for inner models"
+    async def test_extractor_validators(self, reason, file_content):
+        with mock.patch(
+            "builtins.open",
+            new=mock.mock_open(read_data=file_content),
+            create=True,
         ):
-            await get_cloud_environment()
-
-    @mock.patch(
-        "builtins.open",
-        new=mock.mock_open(
-            read_data="""{
-    "vms": [],
-    "fw_rules": [
-        {
-        "fw_id": "id1",
-        "source_tag": "ssh",
-        "dest_tag": "dev"
-    },
-    {
-        "fw_id": "id1",
-        "source_tag": "ssh",
-        "dest_tag": "dev"
-    }
-    ]
-}"""
-        ),
-        create=True,
-    )
-    async def test_extractor_with_vm_ids_duplication(self):
-        with self.assertRaises(ValidationError, msg="VM IDs should be unique"):
-            await get_cloud_environment()
-
-    @mock.patch(
-        "builtins.open",
-        new=mock.mock_open(
-            read_data="""{
-    "vms": [
-        {
-            "vm_id": "vm1",
-            "name": "n1",
-            "tags": []
-        },
-        {
-            "vm_id": "vm1",
-            "name": "n1_1",
-            "tags": []
-        }
-    ],
-    "fw_rules": []
-}"""
-        ),
-        create=True,
-    )
-    async def test_extractor_with_fw_rule_ids_duplication(self):
-        with self.assertRaises(
-            ValidationError, msg="Firewall Rule IDs should be unique"
-        ):
-            await get_cloud_environment()
-
-    @mock.patch(
-        "builtins.open",
-        new=mock.mock_open(
-            read_data="""
-    "fw_rules": []
-}"""
-        ),
-        create=True,
-    )
-    async def test_extractor_with_incorrect_file(self):
-        with self.assertRaises(ValidationError, msg="Invalid JSON"):
-            await get_cloud_environment()
+            with self.assertRaises(ValidationError, msg=reason):
+                await get_cloud_environment()
