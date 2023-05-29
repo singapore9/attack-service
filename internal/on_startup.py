@@ -66,6 +66,7 @@ async def prepare_server():
         )
     if fw_rule_coros:
         await gather(*fw_rule_coros)
+    await StatusCollection.rewrite(StatusModel(ok=True, error_msg=""))
 
 
 if __name__ == "__main__":

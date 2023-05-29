@@ -113,6 +113,7 @@ class DBOnStartupTestCase(IsolatedAsyncioTestCase):
         vm_collection.rewrite = mock.AsyncMock()
         fw_collection.rewrite = mock.AsyncMock()
         status_collection.delete_many = mock.AsyncMock()
+        status_collection.rewrite = mock.AsyncMock()
         response_info_collection.delete_many = mock.AsyncMock()
         tag_info_collection.delete_many = mock.AsyncMock()
         tag_info_collection.add_vm_for_tag = mock.AsyncMock()
