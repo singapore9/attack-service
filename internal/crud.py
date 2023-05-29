@@ -1,7 +1,7 @@
 from typing import Any, AsyncIterable, Optional, Type, TypeVar
 
 from .db import MONGO_DB, get_database
-from .models import FirewallRule, TagInfo, VMInfo
+from .models import FirewallRule, StatusModel, TagInfo, VMInfo
 
 Model = TypeVar("Model", bound="BaseModel")
 
@@ -130,3 +130,38 @@ class TagInfoCollection(BaseCollection):
         await cls._add_item_into_list_field_for_tag(
             tag, "destination_tags", destination_tag
         )
+
+
+class StatusCollection:
+    @classmethod
+    def name(cls):
+        return "ServiceStatus"
+
+    @classmethod
+    def get_model(cls) -> Type[StatusModel]:
+        raise StatusModel
+
+    @classmethod
+    async def get_collection(cls):
+        db = (await get_database())[MONGO_DB]
+        return db[cls.name()]
+
+    @classmethod
+    async def delete_many(cls, locator=None):
+        locator = locator or {}
+        collection = await cls.get_collection()
+        return await collection.delete_many(locator)
+
+    @classmethod
+    async def rewrite(cls, status: StatusModel):
+        collection = await cls.get_collection()
+        await cls.delete_many()
+        return await collection.insert_one(status.dict())
+
+    @classmethod
+    async def get_status(cls) -> Optional[StatusModel]:
+        collection = await cls.get_collection()
+        cursor = collection.find({})
+
+        for doc in await cursor.to_list(length=None):
+            return cls.get_model().parse_obj(doc)

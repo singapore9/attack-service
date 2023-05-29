@@ -56,3 +56,8 @@ class CloudEnvironment(StrictBaseModel):
             set(fw_rule_ids)
         ), "Firewall Rule IDs should be unique for one environment"
         return rules
+
+
+class StatusModel(BaseModel):
+    ok: bool = True
+    error_msg: str = ""
