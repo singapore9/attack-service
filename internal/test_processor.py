@@ -25,11 +25,15 @@ class ProcessorTestCase(IsolatedAsyncioTestCase):
             with mock.patch(
                 get_mock_path("VirtualMachineCollection")
             ) as vm_collection_mock:
+                vm_dict = {
+                    "id1": VMInfo(id="id1", name="n1", tags=["t1"]),
+                    "id2": VMInfo(id="id2", name="n2", tags=["t2"]),
+                }
                 vm_collection_mock.get_all = mock.AsyncMock(
-                    return_value=[
-                        VMInfo(id="id1", name="n1", tags=["t1"]),
-                        VMInfo(id="id2", name="n2", tags=["t2"]),
-                    ]
+                    return_value=list(vm_dict.values())
+                )
+                vm_collection_mock.get_by_id = mock.AsyncMock(
+                    side_effect=lambda id: vm_dict.get(id)
                 )
                 result = await get_affected_vm_id_list("id2")
 
@@ -108,32 +112,36 @@ class ProcessorTestCase(IsolatedAsyncioTestCase):
             with mock.patch(
                 get_mock_path("VirtualMachineCollection")
             ) as vm_collection_mock:
-                vm_collection_mock.get_all = mock.AsyncMock(
-                    return_value=[
-                        VMInfo.parse_obj(obj)
-                        for obj in [
-                            {"vm_id": "vm-1", "name": "", "tags": ["tag-1_0"]},
-                            {
-                                "vm_id": "vm-2",
-                                "name": "",
-                                "tags": ["tag-1_1", "tag-2_0"],
-                            },
-                            {"vm_id": "vm-3", "name": "", "tags": ["tag-2_1"]},
-                            {
-                                "vm_id": "vm-4",
-                                "name": "",
-                                "tags": ["tag-3_0", "tag-3_1"],
-                            },
-                            {"vm_id": "vm-5", "name": "", "tags": ["tag-3_2"]},
-                            {"vm_id": "vm-6", "name": "", "tags": ["tag-3_3"]},
-                            {
-                                "vm_id": "vm-7",
-                                "name": "",
-                                "tags": ["tag-4_0", "tag-4_1"],
-                            },
-                            {"vm_id": "vm-8", "name": "", "tags": ["tag-4_1"]},
-                        ]
+                vm_dict = {
+                    obj["vm_id"]: VMInfo.parse_obj(obj)
+                    for obj in [
+                        {"vm_id": "vm-1", "name": "", "tags": ["tag-1_0"]},
+                        {
+                            "vm_id": "vm-2",
+                            "name": "",
+                            "tags": ["tag-1_1", "tag-2_0"],
+                        },
+                        {"vm_id": "vm-3", "name": "", "tags": ["tag-2_1"]},
+                        {
+                            "vm_id": "vm-4",
+                            "name": "",
+                            "tags": ["tag-3_0", "tag-3_1"],
+                        },
+                        {"vm_id": "vm-5", "name": "", "tags": ["tag-3_2"]},
+                        {"vm_id": "vm-6", "name": "", "tags": ["tag-3_3"]},
+                        {
+                            "vm_id": "vm-7",
+                            "name": "",
+                            "tags": ["tag-4_0", "tag-4_1"],
+                        },
+                        {"vm_id": "vm-8", "name": "", "tags": ["tag-4_1"]},
                     ]
+                }
+                vm_collection_mock.get_all = mock.AsyncMock(
+                    return_value=list(vm_dict.values())
+                )
+                vm_collection_mock.get_by_id = mock.AsyncMock(
+                    side_effect=lambda id: vm_dict.get(id)
                 )
                 result = await get_affected_vm_id_list(vm_id)
 
@@ -164,20 +172,24 @@ class ProcessorTestCase(IsolatedAsyncioTestCase):
             with mock.patch(
                 get_mock_path("VirtualMachineCollection")
             ) as vm_collection_mock:
+                vm_dict = {
+                    f"id{i}": VMInfo(
+                        id=f"id{i}",
+                        name=f"n{i}",
+                        tags=[
+                            f"t{j}"
+                            for j in range(
+                                max(i - TAGS_VARIATION, 0), i + TAGS_VARIATION
+                            )
+                        ],
+                    )
+                    for i in range(VM_COUNT)
+                }
                 vm_collection_mock.get_all = mock.AsyncMock(
-                    return_value=[
-                        VMInfo(
-                            id=f"id{i}",
-                            name=f"n{i}",
-                            tags=[
-                                f"t{j}"
-                                for j in range(
-                                    max(i - TAGS_VARIATION, 0), i + TAGS_VARIATION
-                                )
-                            ],
-                        )
-                        for i in range(VM_COUNT)
-                    ]
+                    return_value=list(vm_dict.values())
+                )
+                vm_collection_mock.get_by_id = mock.AsyncMock(
+                    side_effect=lambda id: vm_dict.get(id)
                 )
 
             before = time()

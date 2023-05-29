@@ -1,9 +1,9 @@
-from typing import Type
-
-from pydantic import BaseModel, parse_obj_as
+from typing import Optional, Type, TypeVar
 
 from .db import MONGO_DB, get_database
 from .models import FirewallRule, VMInfo
+
+Model = TypeVar("Model", bound="BaseModel")
 
 
 class BaseCollection:
@@ -12,7 +12,7 @@ class BaseCollection:
         raise NotImplementedError
 
     @classmethod
-    def get_model(cls) -> Type[BaseModel]:
+    def get_model(cls) -> Type[Model]:
         raise NotImplementedError
 
     @classmethod
@@ -37,7 +37,7 @@ class BaseCollection:
         return await cls.insert_many(documents)
 
     @classmethod
-    async def get_all(cls):
+    async def get_all(cls) -> list[Model]:
         collection = await cls.get_collection()
         cursor = await collection.find({})
         result = []
@@ -46,6 +46,17 @@ class BaseCollection:
             del doc["_id"]
             result.append(cls.get_model().parse_obj(doc))
         return result
+
+    @classmethod
+    async def get_by_id(cls, id: str) -> Optional[Model]:
+        collection = await cls.get_collection()
+        cursor = await collection.find({"_id": id})
+        result = []
+        for doc in cursor.to_list(length=None):
+            doc["id"] = doc["_id"]
+            del doc["_id"]
+            result.append(cls.get_model().parse_obj(doc))
+        return result[0] if result else None
 
 
 class VirtualMachineCollection(BaseCollection):

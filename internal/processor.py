@@ -1,8 +1,10 @@
 from asyncio import gather
 from collections import defaultdict
 from itertools import chain
+from typing import Optional
 
 from .crud import FirewallRuleCollection, VirtualMachineCollection
+from .models import VMInfo
 
 
 async def get_affected_vm_ids_by_tag(
@@ -21,11 +23,10 @@ async def get_affected_vm_ids_by_tag(
 async def get_affected_vm_id_list(vm_id: str) -> list[str]:
     vm_ids_by_tag = defaultdict(list)
 
-    can_use_tags = []
-    for vm in await VirtualMachineCollection.get_all():
-        if vm.id == vm_id:
-            can_use_tags = vm.tags
+    first_vm: Optional[VMInfo] = await VirtualMachineCollection.get_by_id(vm_id)
+    can_use_tags = first_vm.tags if first_vm else []
 
+    for vm in await VirtualMachineCollection.get_all():
         for tag in vm.tags:
             vm_ids_by_tag[tag].append(vm.id)
     dest_tags_by_source_tag = defaultdict(set)
