@@ -24,8 +24,10 @@ class DBOnStartupTestCase(IsolatedAsyncioTestCase):
     @mock.patch(get_mock_path("VirtualMachineCollection"))
     @mock.patch(get_mock_path("StatusCollection"))
     @mock.patch(get_mock_path("TagInfoCollection"))
+    @mock.patch(get_mock_path("ResponseInfoCollection"))
     async def test(
         self,
+        response_info_collection,
         tag_info_collection,
         status_collection,
         vm_collection,
@@ -111,6 +113,7 @@ class DBOnStartupTestCase(IsolatedAsyncioTestCase):
         vm_collection.rewrite = mock.AsyncMock()
         fw_collection.rewrite = mock.AsyncMock()
         status_collection.delete_many = mock.AsyncMock()
+        response_info_collection.delete_many = mock.AsyncMock()
         tag_info_collection.delete_many = mock.AsyncMock()
         tag_info_collection.add_vm_for_tag = mock.AsyncMock()
         tag_info_collection.add_destination_tag_for_tag = mock.AsyncMock()
@@ -119,6 +122,7 @@ class DBOnStartupTestCase(IsolatedAsyncioTestCase):
 
         vm_collection.rewrite.assert_awaited_once()
         fw_collection.rewrite.assert_awaited_once()
+        response_info_collection.delete_many.assert_awaited_once()
         tag_info_collection.delete_many.assert_awaited_once()
         tag_info_collection.add_vm_for_tag.assert_has_awaits(
             [

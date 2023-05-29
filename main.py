@@ -10,6 +10,9 @@ from routers.api import router as router_api
 from middlewares.check_service_status_middleware import (  # isort: skip
     is_service_correctly_configured,
 )
+from middlewares.save_service_statistic_middleware import (  # isort: skip
+    save_service_statistic,
+)
 
 origins = []
 origins.extend(ALLOWED_HOST)
@@ -28,6 +31,7 @@ app.include_router(router_api, prefix="/api", tags=["api"])
 is_service_correctly_configured = app.middleware("http")(
     is_service_correctly_configured
 )
+save_service_statistic = app.middleware("http")(save_service_statistic)
 
 
 app.add_event_handler("startup", connect_to_mongo)

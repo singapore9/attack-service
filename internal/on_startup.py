@@ -11,6 +11,7 @@ from .crud import (  # isort: skip
     StatusCollection,
     TagInfoCollection,
     VirtualMachineCollection,
+    ResponseInfoCollection,
 )
 
 
@@ -46,6 +47,7 @@ async def prepare_server():
         ),
         TagInfoCollection.delete_many(),
         StatusCollection.delete_many(),
+        ResponseInfoCollection.delete_many(),
     )
 
     async for vm in VirtualMachineCollection.get_all_iter():

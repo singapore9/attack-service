@@ -8,6 +8,7 @@ from internal.models import StatusModel
 from main import app
 
 
+@mock.patch("middlewares.save_service_statistic_middleware.SAVE_SERVICE_STATISTIC", "0")
 class StatusTestCase(IsolatedAsyncioTestCase):
     @mock.patch("main.StatusCollection.get_status", mock.AsyncMock(return_value=None))
     def test_status_negative_when_has_no_info_about_status(self):

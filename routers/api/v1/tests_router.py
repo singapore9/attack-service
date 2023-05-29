@@ -10,6 +10,9 @@ from main import app
 
 class AttackTestCase(IsolatedAsyncioTestCase):
     @mock.patch("middlewares.check_service_status_middleware.CHECK_SERVICE_STATUS", "0")
+    @mock.patch(
+        "middlewares.save_service_statistic_middleware.SAVE_SERVICE_STATISTIC", "0"
+    )
     async def test_attack_positive(self):
         client = TestClient(app)
 
