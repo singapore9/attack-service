@@ -8,7 +8,7 @@ from main import app
 
 
 class ApiVersionTestCase(TestCase):
-    @mock.patch("main.CHECK_SERVICE_STATUS", "0")
+    @mock.patch("middlewares.check_service_status_middleware.CHECK_SERVICE_STATUS", "0")
     def test_api_version_positive(self):
         client = TestClient(app)
 

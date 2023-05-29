@@ -1,12 +1,15 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
-from internal.config import ALLOWED_HOST, CHECK_SERVICE_STATUS
+from internal.config import ALLOWED_HOST
 from internal.crud import StatusCollection
 from internal.db import close_mongo_connection, connect_to_mongo
 from internal.models import StatusModel
 from routers.api import router as router_api
+
+from middlewares.check_service_status_middleware import (  # isort: skip
+    is_service_correctly_configured,
+)
 
 origins = []
 origins.extend(ALLOWED_HOST)
@@ -22,27 +25,9 @@ app.add_middleware(
 app.include_router(router_api, prefix="/api", tags=["api"])
 
 
-@app.middleware("http")
-async def is_service_correctly_configured(request: Request, call_next):
-    try:
-        check_service_status_val = bool(int(CHECK_SERVICE_STATUS))
-    except ValueError:
-        check_service_status_val = True
-
-    if not check_service_status_val:
-        return await call_next(request)
-
-    status = await StatusCollection.get_status()
-    if not status:
-        status = StatusModel(
-            ok=False,
-            error_msg="Cloud Environment (.json file) configuration was not processed by service before start",
-        )
-    if not status.ok:
-        return JSONResponse(content=status.dict(), status_code=428)
-
-    response = await call_next(request)
-    return response
+is_service_correctly_configured = app.middleware("http")(
+    is_service_correctly_configured
+)
 
 
 app.add_event_handler("startup", connect_to_mongo)
