@@ -1,9 +1,8 @@
-from time import time
-from unittest import IsolatedAsyncioTestCase, mock, skip
+from unittest import IsolatedAsyncioTestCase, mock
 
 from parameterized import parameterized
 
-from .models import FirewallRule, VMInfo
+from .models import TagInfo, VMInfo
 from .processor import get_affected_vm_id_list
 
 
@@ -11,22 +10,24 @@ def get_mock_path(item: str) -> str:
     return f"internal.processor.{item}"
 
 
-def get_aiter_mock(return_value):
-    async_mock = mock.AsyncMock()
-    async_mock.__aiter__.return_value = return_value
-    return async_mock
-
-
 class ProcessorTestCase(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         self.longMessage = True
 
     async def test_processor_positive(self):
-        with mock.patch(
-            get_mock_path("FirewallRuleCollection")
-        ) as fw_rule_collection_mock:
-            fw_rule_collection_mock.get_all_iter.return_value = get_aiter_mock(
-                [FirewallRule(id="id1", source_tag="t2", dest_tag="t1")]
+        with mock.patch(get_mock_path("TagInfoCollection")) as tag_info_collection_mock:
+            tag_info_dict = {
+                "t1": TagInfo(id="t1", destination_tags=[], tagged_vm_ids=["id1"]),
+                "t2": TagInfo(
+                    id="t2",
+                    destination_tags=[
+                        "t1",
+                    ],
+                    tagged_vm_ids=["id2"],
+                ),
+            }
+            tag_info_collection_mock.get_by_id = mock.AsyncMock(
+                side_effect=lambda id: tag_info_dict.get(id)
             )
             with mock.patch(
                 get_mock_path("VirtualMachineCollection")
@@ -35,9 +36,6 @@ class ProcessorTestCase(IsolatedAsyncioTestCase):
                     "id1": VMInfo(id="id1", name="n1", tags=["t1"]),
                     "id2": VMInfo(id="id2", name="n2", tags=["t2"]),
                 }
-                vm_collection_mock.get_all_iter.return_value = get_aiter_mock(
-                    list(vm_dict.values())
-                )
                 vm_collection_mock.get_by_id = mock.AsyncMock(
                     side_effect=lambda id: vm_dict.get(id)
                 )
@@ -75,45 +73,41 @@ class ProcessorTestCase(IsolatedAsyncioTestCase):
         )
     )
     async def test_processor_with_different_vms(self, reason, vm_id, expected_vm_ids):
-        with mock.patch(
-            get_mock_path("FirewallRuleCollection")
-        ) as fw_rule_collection_mock:
-            fw_rule_collection_mock.get_all_iter.return_value = get_aiter_mock(
-                [
-                    FirewallRule.parse_obj(obj)
-                    for obj in [
-                        {
-                            "fw_id": "fw-1_0",
-                            "source_tag": "tag-1_0",
-                            "dest_tag": "tag-1_1",
-                        },
-                        {
-                            "fw_id": "fw-2_0",
-                            "source_tag": "tag-2_0",
-                            "dest_tag": "tag-2_1",
-                        },
-                        {
-                            "fw_id": "fw-2_1",
-                            "source_tag": "tag-2_0",
-                            "dest_tag": "tag-2_1",
-                        },
-                        {
-                            "fw_id": "fw-3_0",
-                            "source_tag": "tag-3_0",
-                            "dest_tag": "tag-3_2",
-                        },
-                        {
-                            "fw_id": "fw-3_1",
-                            "source_tag": "tag-3_1",
-                            "dest_tag": "tag-3_3",
-                        },
-                        {
-                            "fw_id": "fw-4_0",
-                            "source_tag": "tag-4_0",
-                            "dest_tag": "tag-4_1",
-                        },
-                    ]
-                ]
+        with mock.patch(get_mock_path("TagInfoCollection")) as tag_info_collection_mock:
+            tag_info_dict = {
+                "tag-1_0": TagInfo(
+                    id="tag-1_0", destination_tags=["tag-1_1"], tagged_vm_ids=["vm-1"]
+                ),
+                "tag-1_1": TagInfo(
+                    id="tag-1_1", destination_tags=[], tagged_vm_ids=["vm-2"]
+                ),
+                "tag-2_0": TagInfo(
+                    id="tag-2_0", destination_tags=["tag-2_1"], tagged_vm_ids=["vm-2"]
+                ),
+                "tag-2_1": TagInfo(
+                    id="tag-2_1", destination_tags=[], tagged_vm_ids=["vm-3"]
+                ),
+                "tag-3_0": TagInfo(
+                    id="tag-3_0", destination_tags=["tag-3_2"], tagged_vm_ids=["vm-4"]
+                ),
+                "tag-3_1": TagInfo(
+                    id="tag-3_1", destination_tags=["tag-3_3"], tagged_vm_ids=["vm-4"]
+                ),
+                "tag-3_2": TagInfo(
+                    id="tag-3_2", destination_tags=[], tagged_vm_ids=["vm-5"]
+                ),
+                "tag-3_3": TagInfo(
+                    id="tag-3_3", destination_tags=[], tagged_vm_ids=["vm-6"]
+                ),
+                "tag-4_0": TagInfo(
+                    id="tag-4_0", destination_tags=["tag-4_1"], tagged_vm_ids=["vm-7"]
+                ),
+                "tag-4_1": TagInfo(
+                    id="tag-4_1", destination_tags=[], tagged_vm_ids=["vm-7", "vm-8"]
+                ),
+            }
+            tag_info_collection_mock.get_by_id = mock.AsyncMock(
+                side_effect=lambda id: tag_info_dict.get(id)
             )
             with mock.patch(
                 get_mock_path("VirtualMachineCollection")
@@ -127,25 +121,18 @@ class ProcessorTestCase(IsolatedAsyncioTestCase):
                             "name": "",
                             "tags": ["tag-1_1", "tag-2_0"],
                         },
-                        {"vm_id": "vm-3", "name": "", "tags": ["tag-2_1"]},
                         {
                             "vm_id": "vm-4",
                             "name": "",
                             "tags": ["tag-3_0", "tag-3_1"],
                         },
-                        {"vm_id": "vm-5", "name": "", "tags": ["tag-3_2"]},
-                        {"vm_id": "vm-6", "name": "", "tags": ["tag-3_3"]},
                         {
                             "vm_id": "vm-7",
                             "name": "",
                             "tags": ["tag-4_0", "tag-4_1"],
                         },
-                        {"vm_id": "vm-8", "name": "", "tags": ["tag-4_1"]},
                     ]
                 }
-                vm_collection_mock.get_all_iter.return_value = get_aiter_mock(
-                    list(vm_dict.values())
-                )
                 vm_collection_mock.get_by_id = mock.AsyncMock(
                     side_effect=lambda id: vm_dict.get(id)
                 )
@@ -155,54 +142,4 @@ class ProcessorTestCase(IsolatedAsyncioTestCase):
             set(result),
             expected_vm_ids,
             reason,
-        )
-
-    @skip(reason="Cloud Environment processor's code has not been optimized yet")
-    async def test_processor_huge_data(self):
-        VM_COUNT = 100000
-        FW_RULES_COUNT = 100000
-        TAGS_VARIATION = 100
-
-        EXPECTED_EXECUTION_TIME_SEC = 2
-
-        with mock.patch(
-            get_mock_path("FirewallRuleCollection")
-        ) as fw_rule_collection_mock:
-            fw_rule_collection_mock.get_all_iter.return_value = get_aiter_mock(
-                [
-                    FirewallRule(id=f"fw_id{i}", source_tag=f"t{i}", dest_tag=f"t{i-1}")
-                    for i in range(FW_RULES_COUNT)
-                ]
-            )
-
-            with mock.patch(
-                get_mock_path("VirtualMachineCollection")
-            ) as vm_collection_mock:
-                vm_dict = {
-                    f"id{i}": VMInfo(
-                        id=f"id{i}",
-                        name=f"n{i}",
-                        tags=[
-                            f"t{j}"
-                            for j in range(
-                                max(i - TAGS_VARIATION, 0), i + TAGS_VARIATION
-                            )
-                        ],
-                    )
-                    for i in range(VM_COUNT)
-                }
-                vm_collection_mock.get_all_iter.return_value = get_aiter_mock(
-                    list(vm_dict.values())
-                )
-                vm_collection_mock.get_by_id = mock.AsyncMock(
-                    side_effect=lambda id: vm_dict.get(id)
-                )
-
-            before = time()
-            await get_affected_vm_id_list("id2")
-            after = time()
-        self.assertGreater(
-            EXPECTED_EXECUTION_TIME_SEC,
-            before - after,
-            "Huge list of VMs and FW rules requires want be handled quickly too",
         )

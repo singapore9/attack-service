@@ -1,43 +1,39 @@
 from asyncio import gather
-from collections import defaultdict
 from itertools import chain
 from typing import Optional
 
-from .crud import FirewallRuleCollection, VirtualMachineCollection
-from .models import VMInfo
+from .crud import TagInfoCollection, VirtualMachineCollection
+from .models import TagInfo, VMInfo
 
 
 async def get_affected_vm_ids_by_tag(
-    vm_ids_by_tag: dict[str, list[str]],
-    dest_tags_by_source_tag: dict[str, set[str]],
     tag: str,
 ) -> list[str]:
+    tag_info: Optional[TagInfo] = await TagInfoCollection.get_by_id(tag)
+    if not tag_info:
+        return []
+
     total_affected_vm_ids_by_tag = []
-    affected_dest_tags = dest_tags_by_source_tag.get(tag, set())
+    affected_dest_tags = tag_info.destination_tags
+
     for affected_tag in affected_dest_tags:
-        affected_vm_ids = vm_ids_by_tag.get(affected_tag, [])
-        total_affected_vm_ids_by_tag.extend(affected_vm_ids)
+        affected_tag_info: Optional[TagInfo] = await TagInfoCollection.get_by_id(
+            affected_tag
+        )
+        if affected_tag_info:
+            total_affected_vm_ids_by_tag.extend(affected_tag_info.tagged_vm_ids)
     return total_affected_vm_ids_by_tag
 
 
 async def get_affected_vm_id_list(vm_id: str) -> list[str]:
-    vm_ids_by_tag = defaultdict(list)
-
     first_vm: Optional[VMInfo] = await VirtualMachineCollection.get_by_id(vm_id)
-    can_use_tags = first_vm.tags if first_vm else []
+    accessed_tags = first_vm.tags if first_vm else []
 
-    async for vm in VirtualMachineCollection.get_all_iter():
-        for tag in vm.tags:
-            vm_ids_by_tag[tag].append(vm.id)
-    dest_tags_by_source_tag = defaultdict(set)
-    async for fw_rule in FirewallRuleCollection.get_all_iter():
-        dest_tags_by_source_tag[fw_rule.source_tag].add(fw_rule.dest_tag)
+    if not accessed_tags:
+        return []
 
     gather_results = await gather(
-        *[
-            get_affected_vm_ids_by_tag(vm_ids_by_tag, dest_tags_by_source_tag, tag)
-            for tag in can_use_tags
-        ]
+        *[get_affected_vm_ids_by_tag(tag) for tag in accessed_tags]
     )
 
     total_affected_vm_ids = set(chain.from_iterable(gather_results))
