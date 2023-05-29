@@ -191,3 +191,10 @@ class ResponseInfoCollection(GetNamedCollectionMixin):
     async def insert_one(cls, document):
         collection = await cls.get_collection()
         return await collection.insert_one(document)
+
+    @classmethod
+    async def get_average_duration(cls):
+        collection = await cls.get_collection()
+        pipeline = [{"$group": {"_id": None, "avg_val": {"$avg": "$duration"}}}]
+        async for info in collection.aggregate(pipeline):
+            return info["avg_val"]

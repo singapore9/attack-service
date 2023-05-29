@@ -26,7 +26,12 @@ async def save_service_statistic(request: Request, call_next):
     process_time = time.time() - start_time
 
     await ResponseInfoCollection.insert_one(
-        ResponseInfoModel(id=str(start_time), duration=process_time).dict(by_alias=True)
+        ResponseInfoModel(
+            id=str(start_time),
+            duration=process_time,
+            path=request.url.path,
+            params=request.url.query or "",
+        ).dict(by_alias=True)
     )
 
     return response
