@@ -25,5 +25,8 @@ Realtime dashboards:
 Realtime troubleshooting:
 - Add integration with NewRelic / Sentry
 
+Remote logs access:
+- Change print (which is works fine with `docker compose logs`) to logging module. Add integration with Elasticsearch
+
 Optimization:
 - Use kind of cache for duplicated /attack endpoint (for example, from already saved requests)

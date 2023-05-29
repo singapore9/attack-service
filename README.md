@@ -46,6 +46,7 @@ Check http://localhost/docs#/default/get_status_status_get (or http://localhost/
 
 If it has ```"ok": true```,  then "cloud environment config" was successfully parsed.
 
+#### Hint 3: if you want to see logs, then use docker: ``docker compose logs --no-color > ~/prefered/location/for/logs.txt``
 
 ## Contributing
 See CONTRIBUTING.md
