@@ -139,7 +139,7 @@ class StatusCollection:
 
     @classmethod
     def get_model(cls) -> Type[StatusModel]:
-        raise StatusModel
+        return StatusModel
 
     @classmethod
     async def get_collection(cls):
