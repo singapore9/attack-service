@@ -1,11 +1,14 @@
 from asyncio import gather, get_event_loop
 
+from pydantic import ValidationError
+
 from .db import connect_to_mongo
 from .extractor import get_cloud_environment
-from .models import FirewallRule
+from .models import FirewallRule, StatusModel
 
 from .crud import (  # isort: skip
     FirewallRuleCollection,
+    StatusCollection,
     TagInfoCollection,
     VirtualMachineCollection,
 )
@@ -13,7 +16,18 @@ from .crud import (  # isort: skip
 
 async def prepare_server():
     await connect_to_mongo()
-    cloud_environment = await get_cloud_environment()
+    error_msg = None
+    try:
+        cloud_environment = await get_cloud_environment()
+    except ValidationError as e:
+        error_msg = f"Cloud Environment was not specified correctly:\n{e}"
+    except Exception as e:
+        error_msg = f"Unspecified error before server was started:\n{e}"
+
+    if error_msg:
+        await StatusCollection.rewrite(StatusModel(ok=False, error_msg=error_msg))
+        return
+
     filtered_rules: set[tuple] = {
         (rule.source_tag, rule.dest_tag) for rule in cloud_environment.rules
     }
@@ -31,6 +45,7 @@ async def prepare_server():
             ]
         ),
         TagInfoCollection.delete_many(),
+        StatusCollection.delete_many(),
     )
 
     async for vm in VirtualMachineCollection.get_all_iter():

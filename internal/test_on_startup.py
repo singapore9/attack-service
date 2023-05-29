@@ -22,9 +22,15 @@ class DBOnStartupTestCase(IsolatedAsyncioTestCase):
     @mock.patch(get_mock_path("get_cloud_environment"))
     @mock.patch(get_mock_path("FirewallRuleCollection"))
     @mock.patch(get_mock_path("VirtualMachineCollection"))
+    @mock.patch(get_mock_path("StatusCollection"))
     @mock.patch(get_mock_path("TagInfoCollection"))
     async def test(
-        self, tag_info_collection, vm_collection, fw_collection, cloud_environment_mock
+        self,
+        tag_info_collection,
+        status_collection,
+        vm_collection,
+        fw_collection,
+        cloud_environment_mock,
     ):
         vm_dict = {
             obj["vm_id"]: VMInfo.parse_obj(obj)
@@ -104,6 +110,7 @@ class DBOnStartupTestCase(IsolatedAsyncioTestCase):
         )
         vm_collection.rewrite = mock.AsyncMock()
         fw_collection.rewrite = mock.AsyncMock()
+        status_collection.delete_many = mock.AsyncMock()
         tag_info_collection.delete_many = mock.AsyncMock()
         tag_info_collection.add_vm_for_tag = mock.AsyncMock()
         tag_info_collection.add_destination_tag_for_tag = mock.AsyncMock()
@@ -145,4 +152,36 @@ class DBOnStartupTestCase(IsolatedAsyncioTestCase):
                 ]
             ],
             any_order=True,
+        )
+
+    @mock.patch(get_mock_path("connect_to_mongo"), mock.AsyncMock())
+    @mock.patch(get_mock_path("get_cloud_environment"))
+    @mock.patch(get_mock_path("StatusCollection"))
+    async def test_with_validation_problem(
+        self, status_collection, cloud_environment_mock
+    ):
+        cloud_environment_mock.side_effect = mock.AsyncMock(
+            side_effect=lambda: CloudEnvironment(
+                machines=[
+                    VMInfo(id="vm1", name="", tags=[]),
+                    VMInfo(id="vm1", name="", tags=[]),
+                ],
+                rules=[],
+            )
+        )
+        status_collection.rewrite = mock.AsyncMock()
+
+        await prepare_server()
+
+        status_collection.rewrite.assert_awaited_once()
+        self.assertEqual(
+            status_collection.rewrite.await_args_list[0][0][0].dict(),
+            {
+                "ok": False,
+                "error_msg": """Cloud Environment was not specified correctly:
+1 validation error for CloudEnvironment
+vms
+  VM IDs should be unique for one environment (type=assertion_error)""",
+            },
+            "Save info about failed processing",
         )
