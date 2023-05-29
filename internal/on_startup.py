@@ -35,7 +35,10 @@ async def prepare_server():
 
     async for vm in VirtualMachineCollection.get_all_iter():
         vm_id = vm.id
-        await gather(*[TagInfoCollection.add_vm_for_tag(tag, vm_id) for tag in vm.tags])
+        if vm.tags:
+            await gather(
+                *[TagInfoCollection.add_vm_for_tag(tag, vm_id) for tag in vm.tags]
+            )
 
     fw_rule_coros = []
     async for fw_rule in FirewallRuleCollection.get_all_iter():
@@ -44,7 +47,8 @@ async def prepare_server():
                 fw_rule.source_tag, fw_rule.dest_tag
             )
         )
-    await gather(*fw_rule_coros)
+    if fw_rule_coros:
+        await gather(*fw_rule_coros)
 
 
 if __name__ == "__main__":
