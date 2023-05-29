@@ -26,11 +26,11 @@ async def get_affected_vm_id_list(vm_id: str) -> list[str]:
     first_vm: Optional[VMInfo] = await VirtualMachineCollection.get_by_id(vm_id)
     can_use_tags = first_vm.tags if first_vm else []
 
-    for vm in await VirtualMachineCollection.get_all():
+    async for vm in VirtualMachineCollection.get_all_iter():
         for tag in vm.tags:
             vm_ids_by_tag[tag].append(vm.id)
     dest_tags_by_source_tag = defaultdict(set)
-    for fw_rule in await FirewallRuleCollection.get_all():
+    async for fw_rule in FirewallRuleCollection.get_all_iter():
         dest_tags_by_source_tag[fw_rule.source_tag].add(fw_rule.dest_tag)
 
     gather_results = await gather(

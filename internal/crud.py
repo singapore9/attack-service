@@ -1,4 +1,4 @@
-from typing import Optional, Type, TypeVar
+from typing import AsyncIterable, Optional, Type, TypeVar
 
 from .db import MONGO_DB, get_database
 from .models import FirewallRule, VMInfo
@@ -39,20 +39,29 @@ class BaseCollection:
     @classmethod
     async def get_all(cls) -> list[Model]:
         collection = await cls.get_collection()
-        cursor = await collection.find({})
+        cursor = collection.find({})
         result = []
-        for doc in cursor.to_list(length=None):
+        for doc in await cursor.to_list(length=None):
             doc["id"] = doc["_id"]
             del doc["_id"]
             result.append(cls.get_model().parse_obj(doc))
         return result
 
     @classmethod
+    async def get_all_iter(cls) -> AsyncIterable[Model]:
+        collection = await cls.get_collection()
+        async for doc in collection.find({}):
+            doc["id"] = doc["_id"]
+            del doc["_id"]
+            obj = cls.get_model().parse_obj(doc)
+            yield obj
+
+    @classmethod
     async def get_by_id(cls, id: str) -> Optional[Model]:
         collection = await cls.get_collection()
-        cursor = await collection.find({"_id": id})
+        cursor = collection.find({"_id": id})
         result = []
-        for doc in cursor.to_list(length=None):
+        for doc in await cursor.to_list(length=None):
             doc["id"] = doc["_id"]
             del doc["_id"]
             result.append(cls.get_model().parse_obj(doc))

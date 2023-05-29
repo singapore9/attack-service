@@ -11,6 +11,12 @@ def get_mock_path(item: str) -> str:
     return f"internal.processor.{item}"
 
 
+def get_aiter_mock(return_value):
+    async_mock = mock.AsyncMock()
+    async_mock.__aiter__.return_value = return_value
+    return async_mock
+
+
 class ProcessorTestCase(IsolatedAsyncioTestCase):
     async def asyncSetUp(self) -> None:
         self.longMessage = True
@@ -19,8 +25,8 @@ class ProcessorTestCase(IsolatedAsyncioTestCase):
         with mock.patch(
             get_mock_path("FirewallRuleCollection")
         ) as fw_rule_collection_mock:
-            fw_rule_collection_mock.get_all = mock.AsyncMock(
-                return_value=[FirewallRule(id="id1", source_tag="t2", dest_tag="t1")]
+            fw_rule_collection_mock.get_all_iter.return_value = get_aiter_mock(
+                [FirewallRule(id="id1", source_tag="t2", dest_tag="t1")]
             )
             with mock.patch(
                 get_mock_path("VirtualMachineCollection")
@@ -29,8 +35,8 @@ class ProcessorTestCase(IsolatedAsyncioTestCase):
                     "id1": VMInfo(id="id1", name="n1", tags=["t1"]),
                     "id2": VMInfo(id="id2", name="n2", tags=["t2"]),
                 }
-                vm_collection_mock.get_all = mock.AsyncMock(
-                    return_value=list(vm_dict.values())
+                vm_collection_mock.get_all_iter.return_value = get_aiter_mock(
+                    list(vm_dict.values())
                 )
                 vm_collection_mock.get_by_id = mock.AsyncMock(
                     side_effect=lambda id: vm_dict.get(id)
@@ -72,8 +78,8 @@ class ProcessorTestCase(IsolatedAsyncioTestCase):
         with mock.patch(
             get_mock_path("FirewallRuleCollection")
         ) as fw_rule_collection_mock:
-            fw_rule_collection_mock.get_all = mock.AsyncMock(
-                return_value=[
+            fw_rule_collection_mock.get_all_iter.return_value = get_aiter_mock(
+                [
                     FirewallRule.parse_obj(obj)
                     for obj in [
                         {
@@ -137,8 +143,8 @@ class ProcessorTestCase(IsolatedAsyncioTestCase):
                         {"vm_id": "vm-8", "name": "", "tags": ["tag-4_1"]},
                     ]
                 }
-                vm_collection_mock.get_all = mock.AsyncMock(
-                    return_value=list(vm_dict.values())
+                vm_collection_mock.get_all_iter.return_value = get_aiter_mock(
+                    list(vm_dict.values())
                 )
                 vm_collection_mock.get_by_id = mock.AsyncMock(
                     side_effect=lambda id: vm_dict.get(id)
@@ -162,8 +168,8 @@ class ProcessorTestCase(IsolatedAsyncioTestCase):
         with mock.patch(
             get_mock_path("FirewallRuleCollection")
         ) as fw_rule_collection_mock:
-            fw_rule_collection_mock.get_all = mock.AsyncMock(
-                return_value=[
+            fw_rule_collection_mock.get_all_iter.return_value = get_aiter_mock(
+                [
                     FirewallRule(id=f"fw_id{i}", source_tag=f"t{i}", dest_tag=f"t{i-1}")
                     for i in range(FW_RULES_COUNT)
                 ]
@@ -185,8 +191,8 @@ class ProcessorTestCase(IsolatedAsyncioTestCase):
                     )
                     for i in range(VM_COUNT)
                 }
-                vm_collection_mock.get_all = mock.AsyncMock(
-                    return_value=list(vm_dict.values())
+                vm_collection_mock.get_all_iter.return_value = get_aiter_mock(
+                    list(vm_dict.values())
                 )
                 vm_collection_mock.get_by_id = mock.AsyncMock(
                     side_effect=lambda id: vm_dict.get(id)
