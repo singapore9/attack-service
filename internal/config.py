@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+CUSTOM_ENDPOINTS_STARTSWITH = ["/api", "/status"]
+
 ALLOWED_HOST = os.getenv("ALLOWED_HOST", "localhost")
 
 MONGO_PORT = os.getenv("MONGODB_PORT_NUMBER")

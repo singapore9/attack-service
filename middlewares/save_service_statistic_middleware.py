@@ -2,12 +2,17 @@ import time
 
 from fastapi import Request
 
-from internal.config import SAVE_SERVICE_STATISTIC
+from internal.config import CUSTOM_ENDPOINTS_STARTSWITH, SAVE_SERVICE_STATISTIC
 from internal.crud import ResponseInfoCollection
 from internal.models import ResponseInfoModel
 
 
 async def save_service_statistic(request: Request, call_next):
+    if not any(
+        request.url.path.startswith(prefix) for prefix in CUSTOM_ENDPOINTS_STARTSWITH
+    ):
+        return await call_next(request)
+
     try:
         save_service_statistic_val = bool(int(SAVE_SERVICE_STATISTIC))
     except ValueError:

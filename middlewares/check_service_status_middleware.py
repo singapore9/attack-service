@@ -1,12 +1,17 @@
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
-from internal.config import CHECK_SERVICE_STATUS
+from internal.config import CHECK_SERVICE_STATUS, CUSTOM_ENDPOINTS_STARTSWITH
 from internal.crud import StatusCollection
 from internal.models import StatusModel
 
 
 async def is_service_correctly_configured(request: Request, call_next):
+    if not any(
+        request.url.path.startswith(prefix) for prefix in CUSTOM_ENDPOINTS_STARTSWITH
+    ):
+        return await call_next(request)
+
     try:
         check_service_status_val = bool(int(CHECK_SERVICE_STATUS))
     except ValueError:
