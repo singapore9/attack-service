@@ -3,8 +3,12 @@ from unittest import IsolatedAsyncioTestCase, mock, skip
 
 from parameterized import parameterized
 
-from .models import CloudEnvironment, FirewallRule, VMInfo
+from .models import FirewallRule, VMInfo
 from .processor import get_affected_vm_id_list
+
+
+def get_mock_path(item: str) -> str:
+    return f"internal.processor.{item}"
 
 
 class ProcessorTestCase(IsolatedAsyncioTestCase):
@@ -13,16 +17,21 @@ class ProcessorTestCase(IsolatedAsyncioTestCase):
 
     async def test_processor_positive(self):
         with mock.patch(
-            "internal.processor.get_cloud_environment"
-        ) as get_cloud_environment_mock:
-            get_cloud_environment_mock.return_value = CloudEnvironment(
-                machines=[
-                    VMInfo(id="id1", name="n1", tags=["t1"]),
-                    VMInfo(id="id2", name="n2", tags=["t2"]),
-                ],
-                rules=[FirewallRule(id="id1", source_tag="t2", dest_tag="t1")],
+            get_mock_path("FirewallRuleCollection")
+        ) as fw_rule_collection_mock:
+            fw_rule_collection_mock.get_all = mock.AsyncMock(
+                return_value=[FirewallRule(id="id1", source_tag="t2", dest_tag="t1")]
             )
-            result = await get_affected_vm_id_list("id2")
+            with mock.patch(
+                get_mock_path("VirtualMachineCollection")
+            ) as vm_collection_mock:
+                vm_collection_mock.get_all = mock.AsyncMock(
+                    return_value=[
+                        VMInfo(id="id1", name="n1", tags=["t1"]),
+                        VMInfo(id="id2", name="n2", tags=["t2"]),
+                    ]
+                )
+                result = await get_affected_vm_id_list("id2")
 
         self.assertEqual(
             result,
@@ -57,21 +66,12 @@ class ProcessorTestCase(IsolatedAsyncioTestCase):
     )
     async def test_processor_with_different_vms(self, reason, vm_id, expected_vm_ids):
         with mock.patch(
-            "internal.processor.get_cloud_environment"
-        ) as get_cloud_environment_mock:
-            get_cloud_environment_mock.return_value = CloudEnvironment.parse_obj(
-                {
-                    "vms": [
-                        {"vm_id": "vm-1", "name": "", "tags": ["tag-1_0"]},
-                        {"vm_id": "vm-2", "name": "", "tags": ["tag-1_1", "tag-2_0"]},
-                        {"vm_id": "vm-3", "name": "", "tags": ["tag-2_1"]},
-                        {"vm_id": "vm-4", "name": "", "tags": ["tag-3_0", "tag-3_1"]},
-                        {"vm_id": "vm-5", "name": "", "tags": ["tag-3_2"]},
-                        {"vm_id": "vm-6", "name": "", "tags": ["tag-3_3"]},
-                        {"vm_id": "vm-7", "name": "", "tags": ["tag-4_0", "tag-4_1"]},
-                        {"vm_id": "vm-8", "name": "", "tags": ["tag-4_1"]},
-                    ],
-                    "fw_rules": [
+            get_mock_path("FirewallRuleCollection")
+        ) as fw_rule_collection_mock:
+            fw_rule_collection_mock.get_all = mock.AsyncMock(
+                return_value=[
+                    FirewallRule.parse_obj(obj)
+                    for obj in [
                         {
                             "fw_id": "fw-1_0",
                             "source_tag": "tag-1_0",
@@ -102,10 +102,40 @@ class ProcessorTestCase(IsolatedAsyncioTestCase):
                             "source_tag": "tag-4_0",
                             "dest_tag": "tag-4_1",
                         },
-                    ],
-                }
+                    ]
+                ]
             )
-            result = await get_affected_vm_id_list(vm_id)
+            with mock.patch(
+                get_mock_path("VirtualMachineCollection")
+            ) as vm_collection_mock:
+                vm_collection_mock.get_all = mock.AsyncMock(
+                    return_value=[
+                        VMInfo.parse_obj(obj)
+                        for obj in [
+                            {"vm_id": "vm-1", "name": "", "tags": ["tag-1_0"]},
+                            {
+                                "vm_id": "vm-2",
+                                "name": "",
+                                "tags": ["tag-1_1", "tag-2_0"],
+                            },
+                            {"vm_id": "vm-3", "name": "", "tags": ["tag-2_1"]},
+                            {
+                                "vm_id": "vm-4",
+                                "name": "",
+                                "tags": ["tag-3_0", "tag-3_1"],
+                            },
+                            {"vm_id": "vm-5", "name": "", "tags": ["tag-3_2"]},
+                            {"vm_id": "vm-6", "name": "", "tags": ["tag-3_3"]},
+                            {
+                                "vm_id": "vm-7",
+                                "name": "",
+                                "tags": ["tag-4_0", "tag-4_1"],
+                            },
+                            {"vm_id": "vm-8", "name": "", "tags": ["tag-4_1"]},
+                        ]
+                    ]
+                )
+                result = await get_affected_vm_id_list(vm_id)
 
         self.assertEqual(
             set(result),
@@ -122,27 +152,34 @@ class ProcessorTestCase(IsolatedAsyncioTestCase):
         EXPECTED_EXECUTION_TIME_SEC = 2
 
         with mock.patch(
-            "internal.processor.get_cloud_environment"
-        ) as get_cloud_environment_mock:
-            get_cloud_environment_mock.return_value = CloudEnvironment(
-                machines=[
-                    VMInfo(
-                        id=f"id{i}",
-                        name=f"n{i}",
-                        tags=[
-                            f"t{j}"
-                            for j in range(
-                                max(i - TAGS_VARIATION, 0), i + TAGS_VARIATION
-                            )
-                        ],
-                    )
-                    for i in range(VM_COUNT)
-                ],
-                rules=[
+            get_mock_path("FirewallRuleCollection")
+        ) as fw_rule_collection_mock:
+            fw_rule_collection_mock.get_all = mock.AsyncMock(
+                return_value=[
                     FirewallRule(id=f"fw_id{i}", source_tag=f"t{i}", dest_tag=f"t{i-1}")
                     for i in range(FW_RULES_COUNT)
-                ],
+                ]
             )
+
+            with mock.patch(
+                get_mock_path("VirtualMachineCollection")
+            ) as vm_collection_mock:
+                vm_collection_mock.get_all = mock.AsyncMock(
+                    return_value=[
+                        VMInfo(
+                            id=f"id{i}",
+                            name=f"n{i}",
+                            tags=[
+                                f"t{j}"
+                                for j in range(
+                                    max(i - TAGS_VARIATION, 0), i + TAGS_VARIATION
+                                )
+                            ],
+                        )
+                        for i in range(VM_COUNT)
+                    ]
+                )
+
             before = time()
             await get_affected_vm_id_list("id2")
             after = time()

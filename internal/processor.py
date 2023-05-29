@@ -2,7 +2,7 @@ from asyncio import gather
 from collections import defaultdict
 from itertools import chain
 
-from .extractor import get_cloud_environment
+from .crud import FirewallRuleCollection, VirtualMachineCollection
 
 
 async def get_affected_vm_ids_by_tag(
@@ -19,18 +19,17 @@ async def get_affected_vm_ids_by_tag(
 
 
 async def get_affected_vm_id_list(vm_id: str) -> list[str]:
-    cloud_environment = await get_cloud_environment()
     vm_ids_by_tag = defaultdict(list)
 
     can_use_tags = []
-    for vm in cloud_environment.machines:
+    for vm in await VirtualMachineCollection.get_all():
         if vm.id == vm_id:
             can_use_tags = vm.tags
 
         for tag in vm.tags:
             vm_ids_by_tag[tag].append(vm.id)
     dest_tags_by_source_tag = defaultdict(set)
-    for fw_rule in cloud_environment.rules:
+    for fw_rule in await FirewallRuleCollection.get_all():
         dest_tags_by_source_tag[fw_rule.source_tag].add(fw_rule.dest_tag)
 
     gather_results = await gather(
