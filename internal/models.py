@@ -31,6 +31,12 @@ class FirewallRule(StrictBaseModel):
     dest_tag: str
 
 
+class TagInfo(StrictBaseModel):
+    id: str
+    tagged_vm_ids: list[str]
+    destination_tags: list[str]
+
+
 class CloudEnvironment(StrictBaseModel):
     machines: list[VMInfo] = Field(alias="vms")
     rules: list[FirewallRule] = Field(alias="fw_rules")

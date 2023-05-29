@@ -1,7 +1,7 @@
-from typing import AsyncIterable, Optional, Type, TypeVar
+from typing import Any, AsyncIterable, Optional, Type, TypeVar
 
 from .db import MONGO_DB, get_database
-from .models import FirewallRule, VMInfo
+from .models import FirewallRule, TagInfo, VMInfo
 
 Model = TypeVar("Model", bound="BaseModel")
 
@@ -86,3 +86,47 @@ class FirewallRuleCollection(BaseCollection):
     @classmethod
     def get_model(cls):
         return FirewallRule
+
+
+class TagInfoCollection(BaseCollection):
+    @classmethod
+    def name(cls):
+        return "TagInfo"
+
+    @classmethod
+    def get_model(cls):
+        return TagInfo
+
+    @classmethod
+    async def _add_item_into_list_field_for_tag(
+        cls, tag: str, field_name: str, item: Any
+    ):
+        tag_info: Optional[TagInfo] = await cls.get_by_id(tag)
+        if tag_info:
+            field_value: list[Any] = getattr(tag_info, field_name)
+            if item not in field_value:
+                field_value.append(item)
+                setattr(tag_info, field_name, field_value)
+                collection = await cls.get_collection()
+                await collection.find_one_and_replace({"_id": tag}, tag_info.to_db())
+        else:
+            tag_info = TagInfo(id=tag, tagged_vm_ids=[], destination_tags=[])
+            setattr(
+                tag_info,
+                field_name,
+                [
+                    item,
+                ],
+            )
+            collection = await cls.get_collection()
+            await collection.insert_one(tag_info.to_db())
+
+    @classmethod
+    async def add_vm_for_tag(cls, tag: str, vm_id: str):
+        await cls._add_item_into_list_field_for_tag(tag, "tagged_vm_ids", vm_id)
+
+    @classmethod
+    async def add_destination_tag_for_tag(cls, tag: str, destination_tag: str):
+        await cls._add_item_into_list_field_for_tag(
+            tag, "destination_tags", destination_tag
+        )

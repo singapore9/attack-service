@@ -1,9 +1,14 @@
 from asyncio import gather, get_event_loop
 
-from .crud import FirewallRuleCollection, VirtualMachineCollection
 from .db import connect_to_mongo
 from .extractor import get_cloud_environment
 from .models import FirewallRule
+
+from .crud import (  # isort: skip
+    FirewallRuleCollection,
+    TagInfoCollection,
+    VirtualMachineCollection,
+)
 
 
 async def prepare_server():
@@ -25,7 +30,21 @@ async def prepare_server():
                 for i, rule_info in enumerate(filtered_rules)
             ]
         ),
+        TagInfoCollection.delete_many(),
     )
+
+    async for vm in VirtualMachineCollection.get_all_iter():
+        vm_id = vm.id
+        await gather(*[TagInfoCollection.add_vm_for_tag(tag, vm_id) for tag in vm.tags])
+
+    fw_rule_coros = []
+    async for fw_rule in FirewallRuleCollection.get_all_iter():
+        fw_rule_coros.append(
+            TagInfoCollection.add_destination_tag_for_tag(
+                fw_rule.source_tag, fw_rule.dest_tag
+            )
+        )
+    await gather(*fw_rule_coros)
 
 
 if __name__ == "__main__":
