@@ -9,7 +9,7 @@ from main import app
 
 
 class AttackTestCase(IsolatedAsyncioTestCase):
-    @mock.patch.dict(os.environ, {"CHECK_SERVICE_STATUS": "0"}, clear=True)
+    @mock.patch("main.CHECK_SERVICE_STATUS", "0")
     async def test_attack_positive(self):
         client = TestClient(app)
 

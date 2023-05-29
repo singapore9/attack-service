@@ -1,0 +1,17 @@
+import os
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+ALLOWED_HOST = os.getenv("ALLOWED_HOST", "localhost")
+
+MONGO_PORT = os.getenv("MONGODB_PORT_NUMBER")
+MONGO_DB = os.getenv("MONGODB_DATABASE")
+MONGODB_URL = f"mongodb://db:{MONGO_PORT}/{MONGO_DB}"
+
+SCHEMA_PATH_KEY = "CLOUD_ENV_PATH"
+CLOUD_SCHEMA_PATH = os.getenv(SCHEMA_PATH_KEY)
+
+CHECK_SERVICE_STATUS_KEY = "CHECK_SERVICE_STATUS"
+CHECK_SERVICE_STATUS = os.getenv(CHECK_SERVICE_STATUS_KEY, 0)

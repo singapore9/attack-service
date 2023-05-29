@@ -1,4 +1,3 @@
-import os
 from unittest import TestCase, mock
 
 from fastapi.testclient import TestClient
@@ -9,7 +8,7 @@ from main import app
 
 
 class ApiVersionTestCase(TestCase):
-    @mock.patch.dict(os.environ, {"CHECK_SERVICE_STATUS": "0"}, clear=True)
+    @mock.patch("main.CHECK_SERVICE_STATUS", "0")
     def test_api_version_positive(self):
         client = TestClient(app)
 

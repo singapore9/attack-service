@@ -1,14 +1,6 @@
-import os
-
-from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
 
-load_dotenv()
-
-MONGO_PORT = os.getenv("MONGODB_PORT_NUMBER")
-MONGO_DB = os.getenv("MONGODB_DATABASE")
-
-MONGODB_URL = f"mongodb://db:{MONGO_PORT}/{MONGO_DB}"
+from .config import MONGODB_URL
 
 
 class DataBase:

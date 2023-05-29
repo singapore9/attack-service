@@ -1,6 +1,7 @@
 from typing import Any, AsyncIterable, Optional, Type, TypeVar
 
-from .db import MONGO_DB, get_database
+from .config import MONGO_DB
+from .db import get_database
 from .models import FirewallRule, StatusModel, TagInfo, VMInfo
 
 Model = TypeVar("Model", bound="BaseModel")

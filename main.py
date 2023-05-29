@@ -1,19 +1,15 @@
-import os
-
-from dotenv import load_dotenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from internal.config import ALLOWED_HOST, CHECK_SERVICE_STATUS
 from internal.crud import StatusCollection
 from internal.db import close_mongo_connection, connect_to_mongo
 from internal.models import StatusModel
 from routers.api import router as router_api
 
-load_dotenv()
-
 origins = []
-origins.extend(os.getenv("ALLOWED_HOST", "localhost"))
+origins.extend(ALLOWED_HOST)
 
 app = FastAPI()
 app.add_middleware(
@@ -28,9 +24,8 @@ app.include_router(router_api, prefix="/api", tags=["api"])
 
 @app.middleware("http")
 async def is_service_correctly_configured(request: Request, call_next):
-    check_service_status_val = os.getenv("CHECK_SERVICE_STATUS", 0)
     try:
-        check_service_status_val = bool(int(check_service_status_val))
+        check_service_status_val = bool(int(CHECK_SERVICE_STATUS))
     except ValueError:
         check_service_status_val = True
 
