@@ -1,4 +1,5 @@
-from unittest import TestCase
+import os
+from unittest import TestCase, mock
 
 from fastapi.testclient import TestClient
 from httpx import codes
@@ -8,6 +9,7 @@ from main import app
 
 
 class ApiVersionTestCase(TestCase):
+    @mock.patch.dict(os.environ, {"CHECK_SERVICE_STATUS": "0"}, clear=True)
     def test_api_version_positive(self):
         client = TestClient(app)
 

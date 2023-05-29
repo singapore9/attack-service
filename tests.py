@@ -15,7 +15,9 @@ class StatusTestCase(IsolatedAsyncioTestCase):
 
         response = client.get("/status")
         self.assertEqual(
-            response.status_code, codes.OK, "Should return 200 when server is OK"
+            response.status_code,
+            codes.PRECONDITION_REQUIRED,
+            "Should return 428 when we don't have info about successful configuration",
         )
         self.assertEqual(
             response.json(),
@@ -35,7 +37,9 @@ class StatusTestCase(IsolatedAsyncioTestCase):
 
         response = client.get("/status")
         self.assertEqual(
-            response.status_code, codes.OK, "Should return 200 when server is OK"
+            response.status_code,
+            codes.OK,
+            "Should return OK when server is OK and configuration was successful",
         )
         self.assertEqual(
             response.json(),
@@ -49,12 +53,14 @@ class StatusTestCase(IsolatedAsyncioTestCase):
             return_value=StatusModel(ok=False, error_msg="Validation failed")
         ),
     )
-    def test_status_positive_when_has_info_about_error(self):
+    def test_status_negative_when_has_info_about_error(self):
         client = TestClient(app)
 
         response = client.get("/status")
         self.assertEqual(
-            response.status_code, codes.OK, "Should return 200 when server is OK"
+            response.status_code,
+            codes.PRECONDITION_REQUIRED,
+            "Should return 428 when configuration failed",
         )
         self.assertEqual(
             response.json(),

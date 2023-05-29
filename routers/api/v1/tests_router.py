@@ -1,3 +1,4 @@
+import os
 from unittest import IsolatedAsyncioTestCase, mock
 
 from fastapi.testclient import TestClient
@@ -8,6 +9,7 @@ from main import app
 
 
 class AttackTestCase(IsolatedAsyncioTestCase):
+    @mock.patch.dict(os.environ, {"CHECK_SERVICE_STATUS": "0"}, clear=True)
     async def test_attack_positive(self):
         client = TestClient(app)
 
