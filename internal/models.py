@@ -61,3 +61,8 @@ class CloudEnvironment(StrictBaseModel):
 class StatusModel(BaseModel):
     ok: bool = True
     error_msg: str = ""
+
+
+class ResponseInfoModel(BaseModel):
+    id: str = Field(alias="_id")
+    duration: float

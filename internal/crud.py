@@ -2,24 +2,33 @@ from typing import Any, AsyncIterable, Optional, Type, TypeVar
 
 from .config import MONGO_DB
 from .db import get_database
-from .models import FirewallRule, StatusModel, TagInfo, VMInfo
+
+from .models import (  # isort: skip
+    FirewallRule,
+    ResponseInfoModel,
+    StatusModel,
+    TagInfo,
+    VMInfo,
+)
 
 Model = TypeVar("Model", bound="BaseModel")
 
 
-class BaseCollection:
+class GetNamedCollectionMixin:
     @classmethod
     def name(cls):
-        raise NotImplementedError
-
-    @classmethod
-    def get_model(cls) -> Type[Model]:
         raise NotImplementedError
 
     @classmethod
     async def get_collection(cls):
         db = (await get_database())[MONGO_DB]
         return db[cls.name()]
+
+
+class BaseCollection(GetNamedCollectionMixin):
+    @classmethod
+    def get_model(cls) -> Type[Model]:
+        raise NotImplementedError
 
     @classmethod
     async def delete_many(cls, locator=None):
@@ -133,7 +142,7 @@ class TagInfoCollection(BaseCollection):
         )
 
 
-class StatusCollection:
+class StatusCollection(GetNamedCollectionMixin):
     @classmethod
     def name(cls):
         return "ServiceStatus"
@@ -141,11 +150,6 @@ class StatusCollection:
     @classmethod
     def get_model(cls) -> Type[StatusModel]:
         return StatusModel
-
-    @classmethod
-    async def get_collection(cls):
-        db = (await get_database())[MONGO_DB]
-        return db[cls.name()]
 
     @classmethod
     async def delete_many(cls, locator=None):
@@ -166,3 +170,24 @@ class StatusCollection:
 
         for doc in await cursor.to_list(length=None):
             return cls.get_model().parse_obj(doc)
+
+
+class ResponseInfoCollection(GetNamedCollectionMixin):
+    @classmethod
+    def name(cls):
+        return "ResponseInfo"
+
+    @classmethod
+    def get_model(cls) -> Type[ResponseInfoModel]:
+        return ResponseInfoModel
+
+    @classmethod
+    async def delete_many(cls, locator=None):
+        locator = locator or {}
+        collection = await cls.get_collection()
+        return await collection.delete_many(locator)
+
+    @classmethod
+    async def insert_one(cls, document):
+        collection = await cls.get_collection()
+        return await collection.insert_one(document)
