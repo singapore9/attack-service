@@ -1,4 +1,5 @@
 from asyncio import gather, get_event_loop
+from datetime import datetime
 
 from pydantic import ValidationError
 
@@ -17,6 +18,17 @@ from .crud import (  # isort: skip
 
 async def prepare_server():
     await connect_to_mongo()
+
+    await StatusCollection.rewrite(
+        StatusModel(
+            ok=False,
+            error_msg=(
+                f"Cloud Environment config reading is in progress. "
+                f"It was started at {datetime.utcnow()}"
+            ),
+        )
+    )
+
     error_msg = None
     try:
         cloud_environment = await get_cloud_environment()

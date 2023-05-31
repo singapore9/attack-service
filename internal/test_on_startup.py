@@ -178,9 +178,9 @@ class DBOnStartupTestCase(IsolatedAsyncioTestCase):
 
         await prepare_server()
 
-        status_collection.rewrite.assert_awaited_once()
+        status_collection.rewrite.assert_awaited()
         self.assertEqual(
-            status_collection.rewrite.await_args_list[0][0][0].dict(),
+            status_collection.rewrite.await_args_list[-1][0][0].dict(),
             {
                 "ok": False,
                 "error_msg": """Cloud Environment was not specified correctly:
