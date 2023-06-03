@@ -4,6 +4,8 @@ import pathlib
 PROJECT_DIR = pathlib.Path(__file__).parent.parent.resolve()
 LOGS_DIR = PROJECT_DIR.joinpath("logs")
 
+from time import time
+
 
 def get_logger_filename(module: str) -> str:
     print(module)
@@ -26,9 +28,26 @@ def configure_logger(logs_filename: str, log_level: int):
 def log_step(logger: logging.Logger, msg: str):
     def decorator(func):
         def wrap(*args, **kwargs):
+            before = time()
             logger.debug(f"Start {msg}")
             res = func(*args, **kwargs)
-            logger.debug(f"Finish {msg}")
+            after = time()
+            logger.debug(f"Finish {msg} [{after - before}]")
+            return res
+
+        return wrap
+
+    return decorator
+
+
+def log_step_async(logger: logging.Logger, msg: str):
+    def decorator(coro):
+        async def wrap(*args, **kwargs):
+            before = time()
+            logger.debug(f"Start {msg}")
+            res = await coro(*args, **kwargs)
+            after = time()
+            logger.debug(f"Finish {msg} [{after - before}]")
             return res
 
         return wrap

@@ -6,7 +6,7 @@ from pydantic import ValidationError
 
 from .db import connect_to_mongo
 from .extractor import get_cloud_environment
-from .logger import configure_logger, get_logger_filename
+from .logger import configure_logger, get_logger_filename, log_step_async
 from .models import FirewallRule, StatusModel
 
 from .crud import (  # isort: skip
@@ -21,6 +21,7 @@ from .crud import (  # isort: skip
 logger = logging.getLogger(__name__)
 
 
+@log_step_async(logger, "preparing server")
 async def prepare_server():
     await connect_to_mongo()
 
