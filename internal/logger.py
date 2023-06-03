@@ -1,3 +1,4 @@
+import functools
 import logging
 import pathlib
 
@@ -27,6 +28,7 @@ def configure_logger(logs_filename: str, log_level: int):
 
 def log_step(logger: logging.Logger, msg: str):
     def decorator(func):
+        @functools.wraps(func)
         def wrap(*args, **kwargs):
             before = time()
             logger.debug(f"Start {msg}")
@@ -42,6 +44,7 @@ def log_step(logger: logging.Logger, msg: str):
 
 def log_step_async(logger: logging.Logger, msg: str):
     def decorator(coro):
+        @functools.wraps(coro)
         async def wrap(*args, **kwargs):
             before = time()
             logger.debug(f"Start {msg}")

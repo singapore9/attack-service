@@ -52,6 +52,7 @@ class CloudEnvironment(StrictBaseModel):
     rules: list[FirewallRule] = Field(alias="fw_rules")
 
     @validator("machines")
+    @log_step(logger, "validate machine IDs")
     def unique_machine_ids(cls, machines):
         vm_ids = [vm.id for vm in machines]
         assert len(vm_ids) == len(
@@ -60,6 +61,7 @@ class CloudEnvironment(StrictBaseModel):
         return machines
 
     @validator("rules")
+    @log_step(logger, "validate firewall rule IDs")
     def unique_rule_ids(cls, rules):
         fw_rule_ids = [fw_rule.id for fw_rule in rules]
         assert len(fw_rule_ids) == len(
