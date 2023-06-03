@@ -1,4 +1,14 @@
+import logging
+from typing import Type, TypeVar
+
 from pydantic import BaseModel, Extra, Field, validator
+
+from .logger import log_step
+
+logger = logging.getLogger(__name__)
+
+
+Model = TypeVar("Model", bound="BaseModel")
 
 
 class StrictBaseModel(BaseModel):
@@ -56,6 +66,11 @@ class CloudEnvironment(StrictBaseModel):
             set(fw_rule_ids)
         ), "Firewall Rule IDs should be unique for one environment"
         return rules
+
+    @classmethod
+    @log_step(logger, "parse cloud schema")
+    def parse_raw(cls: Type["Model"], *args, **kwargs) -> "Model":
+        return super().parse_raw(*args, **kwargs)
 
 
 class StatusModel(BaseModel):

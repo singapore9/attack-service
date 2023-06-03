@@ -1,3 +1,4 @@
+import logging
 from asyncio import gather, get_event_loop
 from datetime import datetime
 
@@ -5,6 +6,7 @@ from pydantic import ValidationError
 
 from .db import connect_to_mongo
 from .extractor import get_cloud_environment
+from .logger import configure_logger, get_logger_filename
 from .models import FirewallRule, StatusModel
 
 from .crud import (  # isort: skip
@@ -14,6 +16,9 @@ from .crud import (  # isort: skip
     VirtualMachineCollection,
     ResponseInfoCollection,
 )
+
+
+logger = logging.getLogger(__name__)
 
 
 async def prepare_server():
@@ -33,9 +38,13 @@ async def prepare_server():
     try:
         cloud_environment = await get_cloud_environment()
     except ValidationError as e:
-        error_msg = f"Cloud Environment was not specified correctly:\n{e}"
+        msg = "Cloud Environment was not specified correctly"
+        logger.exception(msg)
+        error_msg = f"{msg}:\n{e}"
     except Exception as e:
-        error_msg = f"Unspecified error before server was started:\n{e}"
+        msg = "Unspecified error before server was started"
+        logger.exception(msg)
+        error_msg = f"{msg}:\n{e}"
 
     if error_msg:
         await StatusCollection.rewrite(StatusModel(ok=False, error_msg=error_msg))
@@ -82,5 +91,8 @@ async def prepare_server():
 
 
 if __name__ == "__main__":
+    logs_filename = get_logger_filename(__file__)
+    configure_logger(logs_filename, logging.DEBUG)
+
     loop = get_event_loop()
     loop.run_until_complete(prepare_server())
