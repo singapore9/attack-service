@@ -10,11 +10,21 @@ This service contains from:
 - Python3 script for pre-processing JSON file
 
 
-Service behaviour:
+## Service behaviour:
 
 1. Python3 script does JSON-file parsing, saves it's info into DB for faster responses.
+<details>
+  <summary>Details for Service behaviour, #1</summary>
 
-1. FastAPI server handles requests
+   - x.1. loads data from JSON to 2 Mongo Collections: Virtual Machine info, Firewall Rule info
+
+   - x.2. data from these collections is aggregated into TagInfo collection - each TagInfo document has info about one tag: which VMs have this tag, which tags are allowed as 'dest_tag' when this tag is 'source_tag'
+
+      - Note: For one tag it can create more than 1 document in TagInfo collection: Mongo doesn't allow us to save huge JSON documents
+
+</details>
+
+2. FastAPI server handles requests
 
     - all the endpoints you can see when start running this service on http://localhost/docs
 
@@ -46,7 +56,15 @@ Check http://localhost/docs#/default/get_status_status_get (or http://localhost/
 
 If it has ```"ok": true```,  then "cloud environment config" was successfully parsed.
 
-#### Hint 3: if you want to see logs, then use docker: ``docker compose logs --no-color > ~/prefered/location/for/logs.txt``
+#### Hint 3: if you want to see logs, then for keeping an eye:
+- on JSON pre-processing script work (Service Behaviour, #1)
+
+``docker compose exec web_app tail -f logs/on_startup.log ``
+
+- on server's work / responses (Service Behaviour, #2)
+
+``docker compose exec web_app tail -f logs/attack-service.log ``
+
 
 ## Contributing
 See CONTRIBUTING.md

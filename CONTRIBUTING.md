@@ -19,12 +19,6 @@ Path | Description | Hint
 
 
 ## TODO
-Performance optimization:
-- Current realization doesn't work well with 1kk notes JSON objects:
-    - Use FirewallRule & VMInfo instead of using TagInfo collection. When all VMs are linked, TagInfo document became huge (Mongo Error)
-    - Use plain in-memory objects in get_cloud_environment method. Pydantic doesn't work fast enough (Pydantic V2 will - https://github.com/tiangolo/fastapi/issues/5806)
-
-
 Realtime dashboards:
 - Add integration with Prometheus + Graphana
 
@@ -32,7 +26,7 @@ Realtime troubleshooting:
 - Add integration with NewRelic / Sentry
 
 Remote logs access:
-- Change print (which is works fine with `docker compose logs`) to logging module. Add integration with Elasticsearch
+- Add integration with Elasticsearch
 
 Optimization:
 - Use kind of cache for duplicated /attack endpoint (for example, from already saved requests)
