@@ -1,10 +1,14 @@
+import logging
 import time
 
 from fastapi import Request
 
 from internal.config import CUSTOM_ENDPOINTS_STARTSWITH, SAVE_SERVICE_STATISTIC
 from internal.crud import ResponseInfoCollection
+from internal.logger import log_step_async
 from internal.models import ResponseInfoModel
+
+logger = logging.getLogger(__name__)
 
 
 async def save_service_statistic(request: Request, call_next):
@@ -22,7 +26,9 @@ async def save_service_statistic(request: Request, call_next):
         return await call_next(request)
 
     start_time = time.time()
-    response = await call_next(request)
+    response = await log_step_async(
+        logger, f"call {request.url.path} and save it to statistics collection"
+    )(call_next)(request)
     process_time = time.time() - start_time
 
     await ResponseInfoCollection.insert_one(

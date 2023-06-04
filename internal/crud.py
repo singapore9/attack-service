@@ -1,7 +1,9 @@
+import logging
 from typing import AsyncIterable, Optional, Type, TypeVar
 
 from .config import MONGO_DB
 from .db import get_database
+from .logger import log_step_async
 
 from .models import (  # isort: skip
     FirewallRule,
@@ -12,6 +14,8 @@ from .models import (  # isort: skip
 )
 
 Model = TypeVar("Model", bound="BaseModel")
+
+logger = logging.getLogger(__name__)
 
 
 class GetNamedCollectionMixin:
@@ -127,6 +131,7 @@ class TagInfoCollection(BaseCollection):
         has_tag_info = False
         tag_info = TagInfo(tag=tag, tagged_vm_ids=[], destination_tags=[])
         for doc in await cursor.to_list(length=None):
+            has_tag_info = True
             tag_info.tagged_vm_ids.extend(doc["tagged_vm_ids"])
             tag_info.destination_tags.extend(doc["destination_tags"])
         return tag_info if has_tag_info else None
@@ -166,6 +171,7 @@ class ResponseInfoCollection(BaseCollection):
         return ResponseInfoModel
 
     @classmethod
+    @log_step_async(logger, "insert request data to DB")
     async def insert_one(cls, document):
         collection = await cls.get_collection()
         return await collection.insert_one(document)

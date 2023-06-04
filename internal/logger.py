@@ -9,7 +9,6 @@ from time import time
 
 
 def get_logger_filename(module: str) -> str:
-    print(module)
     module_name = pathlib.Path(module).name.split(".")[0]
     logs_filename = LOGS_DIR.joinpath(f"{module_name}.log")
     return logs_filename
