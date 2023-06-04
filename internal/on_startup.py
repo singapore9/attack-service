@@ -1,5 +1,6 @@
 import logging
 from asyncio import gather, get_event_loop
+from collections import defaultdict
 from datetime import datetime
 
 from pydantic import ValidationError
@@ -7,7 +8,7 @@ from pydantic import ValidationError
 from .db import connect_to_mongo
 from .extractor import get_cloud_environment
 from .logger import configure_logger, get_logger_filename, log_step_async
-from .models import FirewallRule, StatusModel
+from .models import FirewallRule, StatusModel, TagInfo
 
 from .crud import (  # isort: skip
     FirewallRuleCollection,
@@ -19,6 +20,92 @@ from .crud import (  # isort: skip
 
 
 logger = logging.getLogger(__name__)
+
+MONGO_ARRAY_ELEMS_COUNT = (
+    100000  # For preventing having huge BSON. It leads to Mongo errors
+)
+
+
+def chunks(items, size):
+    for i in range(0, len(items), size):
+        yield items[i : i + size]
+
+
+@log_step_async(logger, "calculate VM IDs for tag")
+async def calculate_vm_ids_for_tags():
+    vm_ids_for_tag = defaultdict(list)
+    async for vm in VirtualMachineCollection.get_all_iter():
+        vm_id = vm.id
+        for tag in vm.tags:
+            vm_ids_for_tag[tag].append(vm_id)
+    return vm_ids_for_tag
+
+
+@log_step_async(logger, "insert VMs for one tag")
+async def insert_data_about_one_tag_vms(tag, vm_ids):
+    collection = await TagInfoCollection.get_collection()
+
+    await gather(
+        *[
+            collection.insert_one(
+                TagInfo(tag=tag, tagged_vm_ids=vm_ids_chunk, destination_tags=[]).dict()
+            )
+            for vm_ids_chunk in chunks(vm_ids, MONGO_ARRAY_ELEMS_COUNT)
+        ]
+    )
+    return
+
+
+@log_step_async(logger, "insert VMs for all tags")
+async def add_vms_for_tags():
+    vm_ids_for_tag = await calculate_vm_ids_for_tags()
+    await gather(
+        *[
+            insert_data_about_one_tag_vms(tag, vm_ids)
+            for tag, vm_ids in vm_ids_for_tag.items()
+        ]
+    )
+    del vm_ids_for_tag
+    return
+
+
+@log_step_async(logger, "calculate Destination Tags for tag")
+async def calculate_destination_tags_for_tags():
+    destination_tags_for_tag = defaultdict(set)
+    async for rule in FirewallRuleCollection.get_all_iter():
+        destination_tags_for_tag[rule.source_tag].add(rule.dest_tag)
+    return destination_tags_for_tag
+
+
+@log_step_async(logger, "insert Destination Tags for one tag")
+async def insert_data_about_one_tag_destination_tags(tag, destination_tags):
+    collection = await TagInfoCollection.get_collection()
+    await gather(
+        *[
+            collection.insert_one(
+                TagInfo(
+                    tag=tag, tagged_vm_ids=[], destination_tags=destination_tags_chunk
+                ).dict()
+            )
+            for destination_tags_chunk in chunks(
+                list(destination_tags), MONGO_ARRAY_ELEMS_COUNT
+            )
+        ]
+    )
+    return
+
+
+@log_step_async(logger, "insert Destination Tags for all tags")
+async def add_destination_tags_for_tags():
+    destination_tags_for_tag = await calculate_destination_tags_for_tags()
+    await gather(
+        *[
+            insert_data_about_one_tag_destination_tags(tag, destination_tags)
+            for tag, destination_tags in destination_tags_for_tag.items()
+        ]
+    )
+    del destination_tags_for_tag
+    return
 
 
 @log_step_async(logger, "preparing server")
@@ -72,22 +159,9 @@ async def prepare_server():
         ResponseInfoCollection.delete_many(),
     )
 
-    async for vm in VirtualMachineCollection.get_all_iter():
-        vm_id = vm.id
-        if vm.tags:
-            await gather(
-                *[TagInfoCollection.add_vm_for_tag(tag, vm_id) for tag in vm.tags]
-            )
+    await add_vms_for_tags()
+    await add_destination_tags_for_tags()
 
-    fw_rule_coros = []
-    async for fw_rule in FirewallRuleCollection.get_all_iter():
-        fw_rule_coros.append(
-            TagInfoCollection.add_destination_tag_for_tag(
-                fw_rule.source_tag, fw_rule.dest_tag
-            )
-        )
-    if fw_rule_coros:
-        await gather(*fw_rule_coros)
     await StatusCollection.rewrite(StatusModel(ok=True, error_msg=""))
 
 

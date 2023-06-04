@@ -116,8 +116,10 @@ class DBOnStartupTestCase(IsolatedAsyncioTestCase):
         status_collection.rewrite = mock.AsyncMock()
         response_info_collection.delete_many = mock.AsyncMock()
         tag_info_collection.delete_many = mock.AsyncMock()
-        tag_info_collection.add_vm_for_tag = mock.AsyncMock()
-        tag_info_collection.add_destination_tag_for_tag = mock.AsyncMock()
+        tag_info_insert_one = mock.AsyncMock()
+        tag_info_collection.get_collection = mock.AsyncMock(
+            return_value=mock.AsyncMock(insert_one=tag_info_insert_one)
+        )
 
         await prepare_server()
 
@@ -125,31 +127,31 @@ class DBOnStartupTestCase(IsolatedAsyncioTestCase):
         fw_collection.rewrite.assert_awaited_once()
         response_info_collection.delete_many.assert_awaited_once()
         tag_info_collection.delete_many.assert_awaited_once()
-        tag_info_collection.add_vm_for_tag.assert_has_awaits(
+
+        tag_info_insert_one.assert_has_awaits(
             [
-                mock.call(tag, vm_id)
-                for (tag, vm_id) in [
-                    ("tag-1_0", "vm-1"),
-                    ("tag-1_1", "vm-2"),
-                    ("tag-2_0", "vm-2"),
-                    ("tag-2_1", "vm-3"),
-                    ("tag-3_0", "vm-4"),
-                    ("tag-3_1", "vm-4"),
-                    ("tag-3_2", "vm-5"),
-                    ("tag-3_3", "vm-6"),
-                    ("tag-4_0", "vm-7"),
-                    ("tag-4_1", "vm-7"),
-                    ("tag-4_1", "vm-8"),
+                mock.call(dict(tag=tag, tagged_vm_ids=vm_ids, destination_tags=[]))
+                for tag, vm_ids in [
+                    ("tag-1_0", ["vm-1"]),
+                    ("tag-1_1", ["vm-2"]),
+                    ("tag-2_0", ["vm-2"]),
+                    ("tag-2_1", ["vm-3"]),
+                    ("tag-3_0", ["vm-4"]),
+                    ("tag-3_1", ["vm-4"]),
+                    ("tag-3_2", ["vm-5"]),
+                    ("tag-3_3", ["vm-6"]),
+                    ("tag-4_0", ["vm-7"]),
+                    ("tag-4_1", ["vm-7", "vm-8"]),
                 ]
             ],
             any_order=True,
         )
-        tag_info_collection.add_destination_tag_for_tag.assert_has_awaits(
+
+        tag_info_insert_one.assert_has_awaits(
             [
-                mock.call(tag, dest_tag)
+                mock.call(dict(tag=tag, tagged_vm_ids=[], destination_tags=[dest_tag]))
                 for (tag, dest_tag) in [
                     ("tag-1_0", "tag-1_1"),
-                    ("tag-2_0", "tag-2_1"),
                     ("tag-2_0", "tag-2_1"),
                     ("tag-3_0", "tag-3_2"),
                     ("tag-3_1", "tag-3_3"),

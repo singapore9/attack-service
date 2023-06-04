@@ -16,7 +16,7 @@ def get_logger_filename(module: str) -> str:
 
 
 def configure_logger(logs_filename: str, log_level: int):
-    LOGS_DIR.mkdir(exist_ok=False)
+    LOGS_DIR.mkdir(exist_ok=True)
 
     logging.basicConfig(
         filename=logs_filename,

@@ -17,16 +17,16 @@ class ProcessorTestCase(IsolatedAsyncioTestCase):
     async def test_processor_positive(self):
         with mock.patch(get_mock_path("TagInfoCollection")) as tag_info_collection_mock:
             tag_info_dict = {
-                "t1": TagInfo(id="t1", destination_tags=[], tagged_vm_ids=["id1"]),
+                "t1": TagInfo(tag="t1", destination_tags=[], tagged_vm_ids=["id1"]),
                 "t2": TagInfo(
-                    id="t2",
+                    tag="t2",
                     destination_tags=[
                         "t1",
                     ],
                     tagged_vm_ids=["id2"],
                 ),
             }
-            tag_info_collection_mock.get_by_id = mock.AsyncMock(
+            tag_info_collection_mock.get_aggregated_tag_info = mock.AsyncMock(
                 side_effect=lambda id: tag_info_dict.get(id)
             )
             with mock.patch(
@@ -76,37 +76,37 @@ class ProcessorTestCase(IsolatedAsyncioTestCase):
         with mock.patch(get_mock_path("TagInfoCollection")) as tag_info_collection_mock:
             tag_info_dict = {
                 "tag-1_0": TagInfo(
-                    id="tag-1_0", destination_tags=["tag-1_1"], tagged_vm_ids=["vm-1"]
+                    tag="tag-1_0", destination_tags=["tag-1_1"], tagged_vm_ids=["vm-1"]
                 ),
                 "tag-1_1": TagInfo(
-                    id="tag-1_1", destination_tags=[], tagged_vm_ids=["vm-2"]
+                    tag="tag-1_1", destination_tags=[], tagged_vm_ids=["vm-2"]
                 ),
                 "tag-2_0": TagInfo(
-                    id="tag-2_0", destination_tags=["tag-2_1"], tagged_vm_ids=["vm-2"]
+                    tag="tag-2_0", destination_tags=["tag-2_1"], tagged_vm_ids=["vm-2"]
                 ),
                 "tag-2_1": TagInfo(
-                    id="tag-2_1", destination_tags=[], tagged_vm_ids=["vm-3"]
+                    tag="tag-2_1", destination_tags=[], tagged_vm_ids=["vm-3"]
                 ),
                 "tag-3_0": TagInfo(
-                    id="tag-3_0", destination_tags=["tag-3_2"], tagged_vm_ids=["vm-4"]
+                    tag="tag-3_0", destination_tags=["tag-3_2"], tagged_vm_ids=["vm-4"]
                 ),
                 "tag-3_1": TagInfo(
-                    id="tag-3_1", destination_tags=["tag-3_3"], tagged_vm_ids=["vm-4"]
+                    tag="tag-3_1", destination_tags=["tag-3_3"], tagged_vm_ids=["vm-4"]
                 ),
                 "tag-3_2": TagInfo(
-                    id="tag-3_2", destination_tags=[], tagged_vm_ids=["vm-5"]
+                    tag="tag-3_2", destination_tags=[], tagged_vm_ids=["vm-5"]
                 ),
                 "tag-3_3": TagInfo(
-                    id="tag-3_3", destination_tags=[], tagged_vm_ids=["vm-6"]
+                    tag="tag-3_3", destination_tags=[], tagged_vm_ids=["vm-6"]
                 ),
                 "tag-4_0": TagInfo(
-                    id="tag-4_0", destination_tags=["tag-4_1"], tagged_vm_ids=["vm-7"]
+                    tag="tag-4_0", destination_tags=["tag-4_1"], tagged_vm_ids=["vm-7"]
                 ),
                 "tag-4_1": TagInfo(
-                    id="tag-4_1", destination_tags=[], tagged_vm_ids=["vm-7", "vm-8"]
+                    tag="tag-4_1", destination_tags=[], tagged_vm_ids=["vm-7", "vm-8"]
                 ),
             }
-            tag_info_collection_mock.get_by_id = mock.AsyncMock(
+            tag_info_collection_mock.get_aggregated_tag_info = mock.AsyncMock(
                 side_effect=lambda id: tag_info_dict.get(id)
             )
             with mock.patch(

@@ -41,10 +41,13 @@ class FirewallRule(StrictBaseModel):
     dest_tag: str
 
 
-class TagInfo(StrictBaseModel):
-    id: str
+class TagInfo(BaseModel):
+    tag: str
     tagged_vm_ids: list[str]
     destination_tags: list[str]
+
+    class Config:
+        allow_population_by_field_name = True
 
 
 class CloudEnvironment(StrictBaseModel):

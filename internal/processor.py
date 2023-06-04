@@ -13,7 +13,7 @@ logger.setLevel(logging.DEBUG)
 async def get_affected_vm_ids_by_tag(
     tag: str,
 ) -> list[str]:
-    tag_info: Optional[TagInfo] = await TagInfoCollection.get_by_id(tag)
+    tag_info: Optional[TagInfo] = await TagInfoCollection.get_aggregated_tag_info(tag)
     if not tag_info:
         print(f"No affected tags by {tag}")
         return []
@@ -24,9 +24,9 @@ async def get_affected_vm_ids_by_tag(
     print(f"Affected tags by {tag}: {affected_dest_tags}")
 
     for affected_tag in affected_dest_tags:
-        affected_tag_info: Optional[TagInfo] = await TagInfoCollection.get_by_id(
-            affected_tag
-        )
+        affected_tag_info: Optional[
+            TagInfo
+        ] = await TagInfoCollection.get_aggregated_tag_info(affected_tag)
         if affected_tag_info:
             total_affected_vm_ids_by_tag.extend(affected_tag_info.tagged_vm_ids)
     print(f"Affected VMs by {tag}: {total_affected_vm_ids_by_tag}")
