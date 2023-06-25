@@ -18,7 +18,7 @@ This service contains from:
 
    - x.1. loads data from JSON to 2 Mongo Collections: Virtual Machine info, Firewall Rule info
 
-   - x.2. data from these collections is aggregated into TagInfo collection - each TagInfo document has info about one tag: which VMs have this tag, which tags are allowed as 'dest_tag' when this tag is 'source_tag'
+   - x.2. data from these collections is aggregated into TagInfo collection - each TagInfo document has info about one tag: which VMs have this tag, which tags have access to this tag
 
       - Note: For one tag it can create more than 1 document in TagInfo collection: Mongo doesn't allow us to save huge JSON documents
 

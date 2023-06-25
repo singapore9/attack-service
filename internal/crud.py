@@ -129,11 +129,11 @@ class TagInfoCollection(BaseCollection):
         cursor = collection.find({"tag": tag})
 
         has_tag_info = False
-        tag_info = TagInfo(tag=tag, tagged_vm_ids=[], destination_tags=[])
+        tag_info = TagInfo(tag=tag, tagged_vm_ids=[], tags_with_access=[])
         for doc in await cursor.to_list(length=None):
             has_tag_info = True
             tag_info.tagged_vm_ids.extend(doc["tagged_vm_ids"])
-            tag_info.destination_tags.extend(doc["destination_tags"])
+            tag_info.tags_with_access.extend(doc["tags_with_access"])
         return tag_info if has_tag_info else None
 
 

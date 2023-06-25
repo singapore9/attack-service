@@ -16,18 +16,24 @@ class AttackTestCase(IsolatedAsyncioTestCase):
     async def test_attack_positive(self):
         client = TestClient(app)
 
-        expected_affected_ids = [
+        expected_ids_with_access = [
             "vm_id1",
         ]
         with mock.patch(
-            "routers.api.v1.router.get_affected_vm_id_list"
-        ) as get_affected_mock:
-            get_affected_mock.return_value = expected_affected_ids
+            "routers.api.v1.router.get_vm_id_list_with_access_to_vm"
+        ) as get_vm_id_list_with_access_to_vm_mock:
+            get_vm_id_list_with_access_to_vm_mock.return_value = (
+                expected_ids_with_access
+            )
             response = client.get("/api/v1/attack", params={"vm_id": "test"})
         self.assertEqual(response.status_code, codes.OK, "Should return 200")
-        self.assertEqual(get_affected_mock.call_count, 1, "Should call logic function")
+        self.assertEqual(
+            get_vm_id_list_with_access_to_vm_mock.call_count,
+            1,
+            "Should call logic function",
+        )
         self.assertEqual(
             response.json(),
-            expected_affected_ids,
+            expected_ids_with_access,
             "Should return result of logic function",
         )

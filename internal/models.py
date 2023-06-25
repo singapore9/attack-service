@@ -44,7 +44,7 @@ class FirewallRule(StrictBaseModel):
 class TagInfo(BaseModel):
     tag: str
     tagged_vm_ids: list[str]
-    destination_tags: list[str]
+    tags_with_access: list[str]
 
     class Config:
         allow_population_by_field_name = True

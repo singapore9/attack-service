@@ -48,7 +48,7 @@ async def insert_data_about_one_tag_vms(tag, vm_ids):
     await gather(
         *[
             collection.insert_one(
-                TagInfo(tag=tag, tagged_vm_ids=vm_ids_chunk, destination_tags=[]).dict()
+                TagInfo(tag=tag, tagged_vm_ids=vm_ids_chunk, tags_with_access=[]).dict()
             )
             for vm_ids_chunk in chunks(vm_ids, MONGO_ARRAY_ELEMS_COUNT)
         ]
@@ -69,42 +69,42 @@ async def add_vms_for_tags():
     return
 
 
-@log_step_async(logger, "calculate Destination Tags for tag")
-async def calculate_destination_tags_for_tags():
-    destination_tags_for_tag = defaultdict(set)
+@log_step_async(logger, "calculate Tags With Access for tag")
+async def calculate_tags_with_access_for_tags():
+    tags_with_access_for_tag = defaultdict(set)
     async for rule in FirewallRuleCollection.get_all_iter():
-        destination_tags_for_tag[rule.source_tag].add(rule.dest_tag)
-    return destination_tags_for_tag
+        tags_with_access_for_tag[rule.dest_tag].add(rule.source_tag)
+    return tags_with_access_for_tag
 
 
-@log_step_async(logger, "insert Destination Tags for one tag")
-async def insert_data_about_one_tag_destination_tags(tag, destination_tags):
+@log_step_async(logger, "insert Tags With Access for one tag")
+async def insert_data_about_one_tag_tags_with_access(tag, tags_with_access):
     collection = await TagInfoCollection.get_collection()
     await gather(
         *[
             collection.insert_one(
                 TagInfo(
-                    tag=tag, tagged_vm_ids=[], destination_tags=destination_tags_chunk
+                    tag=tag, tagged_vm_ids=[], tags_with_access=tags_with_access_chunk
                 ).dict()
             )
-            for destination_tags_chunk in chunks(
-                list(destination_tags), MONGO_ARRAY_ELEMS_COUNT
+            for tags_with_access_chunk in chunks(
+                list(tags_with_access), MONGO_ARRAY_ELEMS_COUNT
             )
         ]
     )
     return
 
 
-@log_step_async(logger, "insert Destination Tags for all tags")
-async def add_destination_tags_for_tags():
-    destination_tags_for_tag = await calculate_destination_tags_for_tags()
+@log_step_async(logger, "insert Tags With Access for all tags")
+async def add_tags_with_access_for_tags():
+    tags_with_access_for_tag = await calculate_tags_with_access_for_tags()
     await gather(
         *[
-            insert_data_about_one_tag_destination_tags(tag, destination_tags)
-            for tag, destination_tags in destination_tags_for_tag.items()
+            insert_data_about_one_tag_tags_with_access(tag, tags_with_access)
+            for tag, tags_with_access in tags_with_access_for_tag.items()
         ]
     )
-    del destination_tags_for_tag
+    del tags_with_access_for_tag
     return
 
 
@@ -160,7 +160,7 @@ async def prepare_server():
     )
 
     await add_vms_for_tags()
-    await add_destination_tags_for_tags()
+    await add_tags_with_access_for_tags()
 
     await StatusCollection.rewrite(StatusModel(ok=True, error_msg=""))
 

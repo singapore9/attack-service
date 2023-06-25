@@ -4,7 +4,7 @@ from typing import Type
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
-from internal.processor import get_affected_vm_id_list
+from internal.processor import get_vm_id_list_with_access_to_vm
 
 from internal.crud import (  # isort: skip
     GetNamedCollectionMixin,
@@ -21,7 +21,7 @@ VmIdsList = list[VmId]
 
 @router.get("/attack", response_model=VmIdsList)
 async def do_attack(request: Request, vm_id: VmId) -> VmIdsList:
-    return await get_affected_vm_id_list(vm_id)
+    return await get_vm_id_list_with_access_to_vm(vm_id)
 
 
 class ServiceStatisticInfo(BaseModel):

@@ -67,33 +67,33 @@ class DBOnStartupTestCase(IsolatedAsyncioTestCase):
             for obj in [
                 {
                     "fw_id": "fw-1_0",
-                    "source_tag": "tag-1_0",
-                    "dest_tag": "tag-1_1",
+                    "source_tag": "tag-1_1",
+                    "dest_tag": "tag-1_0",
                 },
                 {
                     "fw_id": "fw-2_0",
-                    "source_tag": "tag-2_0",
-                    "dest_tag": "tag-2_1",
+                    "source_tag": "tag-2_1",
+                    "dest_tag": "tag-2_0",
                 },
                 {
                     "fw_id": "fw-2_1",
-                    "source_tag": "tag-2_0",
-                    "dest_tag": "tag-2_1",
+                    "source_tag": "tag-2_1",
+                    "dest_tag": "tag-2_0",
                 },
                 {
                     "fw_id": "fw-3_0",
-                    "source_tag": "tag-3_0",
-                    "dest_tag": "tag-3_2",
+                    "source_tag": "tag-3_2",
+                    "dest_tag": "tag-3_0",
                 },
                 {
                     "fw_id": "fw-3_1",
-                    "source_tag": "tag-3_1",
-                    "dest_tag": "tag-3_3",
+                    "source_tag": "tag-3_3",
+                    "dest_tag": "tag-3_1",
                 },
                 {
                     "fw_id": "fw-4_0",
-                    "source_tag": "tag-4_0",
-                    "dest_tag": "tag-4_1",
+                    "source_tag": "tag-4_1",
+                    "dest_tag": "tag-4_0",
                 },
             ]
         }
@@ -130,7 +130,7 @@ class DBOnStartupTestCase(IsolatedAsyncioTestCase):
 
         tag_info_insert_one.assert_has_awaits(
             [
-                mock.call(dict(tag=tag, tagged_vm_ids=vm_ids, destination_tags=[]))
+                mock.call(dict(tag=tag, tagged_vm_ids=vm_ids, tags_with_access=[]))
                 for tag, vm_ids in [
                     ("tag-1_0", ["vm-1"]),
                     ("tag-1_1", ["vm-2"]),
@@ -149,13 +149,15 @@ class DBOnStartupTestCase(IsolatedAsyncioTestCase):
 
         tag_info_insert_one.assert_has_awaits(
             [
-                mock.call(dict(tag=tag, tagged_vm_ids=[], destination_tags=[dest_tag]))
-                for (tag, dest_tag) in [
-                    ("tag-1_0", "tag-1_1"),
-                    ("tag-2_0", "tag-2_1"),
-                    ("tag-3_0", "tag-3_2"),
-                    ("tag-3_1", "tag-3_3"),
-                    ("tag-4_0", "tag-4_1"),
+                mock.call(
+                    dict(tag=dest_tag, tagged_vm_ids=[], tags_with_access=[source_tag])
+                )
+                for (source_tag, dest_tag) in [
+                    ("tag-1_1", "tag-1_0"),
+                    ("tag-2_1", "tag-2_0"),
+                    ("tag-3_2", "tag-3_0"),
+                    ("tag-3_3", "tag-3_1"),
+                    ("tag-4_1", "tag-4_0"),
                 ]
             ],
             any_order=True,
