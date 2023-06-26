@@ -12,7 +12,7 @@ This service contains from:
 
 ## Service behaviour:
 
-1. Python3 script does JSON-file parsing, saves it's info into DB for faster responses.
+1. Python3 script does JSON-file parsing, saves its info into the DB for faster responses.
 <details>
   <summary>Details for Service behaviour, #1</summary>
 
@@ -28,11 +28,11 @@ This service contains from:
 
     - all the endpoints you can see when start running this service on http://localhost/docs
 
-    x.1. Has endpoint /status - it shows can server do attack or not (when #1 finished with fail, for example)
+    x.1. Has an endpoint /status - it shows can server do attack or not (when #1 finished with fail, for example)
 
-    x.2. Requests related to attacks return info about attack only if /status is OK. Otherwise, they return info from /status endpoint.
+    x.2. Requests related to the attacks return info about attack only if /status is OK. Otherwise, they return info from /status endpoint.
 
-    x.3. Info about requests duration is saved during request time.
+    x.3. Info about requests' duration is saved during request time.
 
 
 ## Running
@@ -57,11 +57,11 @@ Check http://localhost/docs#/default/get_status_status_get (or http://localhost/
 If it has ```"ok": true```,  then "cloud environment config" was successfully parsed.
 
 #### Hint 3: if you want to see logs, then for keeping an eye:
-- on JSON pre-processing script work (Service Behaviour, #1)
+- on the JSON pre-processing script work (Service Behaviour, #1)
 
 ``docker compose exec web_app tail -f logs/on_startup.log ``
 
-- on server's work / responses (Service Behaviour, #2)
+- on the server's work / responses (Service Behaviour, #2)
 
 ``docker compose exec web_app tail -f logs/attack-service.log ``
 
